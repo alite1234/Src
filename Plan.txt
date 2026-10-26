@@ -1,0 +1,704 @@
+SRC Legislative Summit Projection and Interactive Quiz Platform
+
+1. Project Overview
+
+Build a professional, real-time web application for managing and projecting content during the SRC Legislative Summit.
+
+The platform combines a presentation and projection system with a Kahoot-style live quiz experience. Administrators prepare the event content, controllers manage the live programme, the projector displays the selected content, and participants join interactive quizzes using their mobile devices.
+
+The application must provide four primary interfaces:
+
+1. Admin Dashboard: Configure the summit, logos, speakers, citations, graphics, scoreboards, questions and other event content.
+2. Controller Dashboard: Control the live presentation, switch scenes, launch quizzes, manage countdowns and reveal scoreboard positions.
+3. Projection Screen: Display professional, full-screen graphics and live content to the audience.
+4. Participant Interface: Allow participants to join a quiz using a PIN or QR code, submit answers and view their results.
+
+All interfaces must synchronize in real time.
+
+---
+
+2. Summit Branding and Logo Management
+
+2.1 Multiple Logo Uploads
+
+The admin must be able to upload between one and five logos for each summit event.
+
+Requirements:
+
+- Support a minimum of one logo and a maximum of five logos.
+- Allow the admin to upload, replace, remove and reorder logos.
+- Support common image formats such as PNG, JPEG and WebP.
+- Support transparent PNG logos.
+- Validate file types and file sizes.
+- Preview logos before saving.
+- Store logo files persistently using cloud storage.
+- Retain saved logos when the page is refreshed or the admin logs in again.
+- Allow the admin to choose a primary logo.
+- Prevent duplicate uploads where practical.
+- Provide clear validation messages when the logo limit is exceeded.
+
+The admin must be able to save the summit only after at least one logo has been uploaded or an existing saved logo has been retained.
+
+2.2 Logo Placement
+
+The system must provide predefined logo layouts rather than requiring the admin to design every screen manually.
+
+Supported layouts should include:
+
+- Primary Logo: One prominent logo in the header or central branding area.
+- Horizontal Row: Multiple logos arranged side by side.
+- Balanced Header: A primary logo alongside smaller supporting logos.
+- Footer Row: Multiple logos arranged along the bottom of the screen.
+- Corner Branding: Logos positioned in approved corners of the projection screen.
+
+The admin should be able to select a logo layout and preview it before saving.
+
+2.3 Logo Visibility Settings
+
+The admin should be able to configure whether the saved logos appear on:
+
+- Opening and welcome screens.
+- Speaker introductions.
+- Citation displays.
+- Speaking Now screens.
+- Quiz lobby screens.
+- Quiz questions and answer reveals.
+- Scoreboards and leaderboard screens.
+- Countdown screens.
+- Closing screens.
+
+Provide a global default setting and optional per-scene overrides.
+
+The application must preserve logo aspect ratios, avoid cropping important logo details, and maintain adequate spacing between multiple logos.
+
+Logo management must be separate from theme colours. Uploading a logo must not automatically change the summit's visual theme.
+
+---
+
+3. Admin Dashboard
+
+The admin dashboard is the main configuration area.
+
+3.1 Event Setup
+
+The admin can create and configure an event with:
+
+- Summit title.
+- Subtitle or theme.
+- Date and venue.
+- Event description.
+- Between one and five logos.
+- Primary logo selection.
+- Logo arrangement and visibility.
+- Opening and closing messages.
+- Saved event graphics.
+- Default animation style.
+- Event status.
+- Saved scenes and presentation sequence.
+
+The event must be saved to a persistent database and remain available after refresh or logout.
+
+3.2 Speakers and Citations
+
+The admin can create and manage speaker profiles.
+
+Each profile supports:
+
+- Full name.
+- Photograph.
+- Official title or position.
+- Faculty, department or institution, where applicable.
+- Biography or citation.
+- Speaking topic.
+- Optional custom background.
+- Preferred display duration.
+- Animation preset.
+
+The admin must be able to create, edit, reorder and delete speaker profiles.
+
+The controller must be able to select any saved speaker and display the associated information without manually re-entering it.
+
+3.3 Projection Scene Builder
+
+The admin can prepare reusable projection scenes, including:
+
+- Opening screen.
+- Welcome screen.
+- Speaker introduction.
+- Citation presentation.
+- Speaking Now announcement.
+- Topic announcement.
+- General announcement.
+- Countdown.
+- Quiz introduction.
+- Quiz question.
+- Correct-answer reveal.
+- Scoreboard.
+- Break screen.
+- Closing screen.
+
+Each scene should have a template, content, animation preset, optional display duration and logo visibility settings.
+
+Editing a scene must never automatically publish it to the projector.
+
+3.4 Administration and Permissions
+
+The system should support secure authentication and role-based access.
+
+Recommended roles:
+
+- Administrator: Full access to event setup, content, branding, user management and settings.
+- Controller: Access to live projection controls and authorized game operations.
+- Participant: Access only to the participant interface and permitted quiz actions.
+
+The public projection screen must not expose administrative controls.
+
+---
+
+4. Controller Dashboard
+
+The controller dashboard is used during the live summit.
+
+4.1 Controller Interface
+
+The interface should provide:
+
+- Current projection preview.
+- Next-scene preview.
+- Scene library.
+- Speaker and citation search.
+- Quick scene buttons.
+- Display button.
+- Previous-scene and next-scene controls.
+- Holding-screen control.
+- Countdown controls.
+- Scoreboard reveal controls.
+- Quiz launch and game controls.
+- Projection connection status.
+- Active quiz participant count.
+
+Controls must be optimized for rapid operation on a laptop or tablet.
+
+4.2 Live Display Control
+
+The controller must be able to:
+
+1. Select a saved scene.
+2. Preview the selected scene privately.
+3. Publish it to the projection screen.
+4. Return to a previous scene.
+5. Move to another scene.
+6. Display a holding screen.
+7. Clear the active content when appropriate.
+8. Start, pause, resume and reset supported countdowns.
+9. Reveal scoreboard positions.
+10. Launch, pause and end the quiz.
+
+All display changes must synchronize in real time.
+
+Preparing or previewing content must not affect the audience's current display.
+
+4.3 Scene Queue
+
+The controller can arrange scenes in a presentation queue.
+
+For example:
+
+1. Welcome screen.
+2. Opening countdown.
+3. Speaker citation.
+4. Speaking Now announcement.
+5. Topic introduction.
+6. Quiz lobby.
+7. Live quiz.
+8. Final leaderboard.
+9. Closing screen.
+
+The controller must be able to reorder, skip or manually select any scene.
+
+Automatic progression can be provided as an optional feature. Manual control must be the default.
+
+---
+
+5. Projection Screen
+
+The projection screen is the audience-facing display.
+
+5.1 Display Requirements
+
+- Full-screen 16:9 presentation layout.
+- Suitable for projectors and LED displays.
+- No visible admin dashboard or controller interface.
+- Large, readable typography.
+- High-contrast colours.
+- Responsive scaling.
+- Professional summit branding.
+- Support for multiple logos.
+- Speaker portraits and background images.
+- Smooth transitions between scenes.
+- Loading and reconnection states.
+- Holding screen when no scene is active.
+
+The projection screen must operate independently from the controller interface.
+
+5.2 Projection Scene Types
+
+The projection screen must support:
+
+- Summit opening and welcome graphics.
+- Speaker introductions.
+- Citation presentations.
+- Speaking Now announcements.
+- Session topics.
+- Countdown screens.
+- Quiz lobby and joining instructions.
+- Live questions.
+- Answer reveals.
+- Leaderboards.
+- Closing graphics.
+
+5.3 Animations and Transitions
+
+Include reusable animation presets:
+
+- Fade.
+- Slide.
+- Text reveal.
+- Image zoom.
+- Spotlight reveal.
+- Score count-up.
+- Podium reveal.
+- Sequential leaderboard animation.
+- Opening and closing animations.
+
+Animations must remain smooth and readable on ordinary event computers. Reduced-motion preferences should be respected where practical.
+
+---
+
+6. Speaker and Citation Display
+
+The platform must provide dedicated layouts for speakers and citations.
+
+6.1 Speaker Introduction
+
+A speaker introduction can display:
+
+- Photograph.
+- Full name.
+- Official title.
+- Faculty or institution.
+- Topic of presentation.
+- Summit branding and selected logos.
+
+The controller selects a speaker and publishes the scene.
+
+6.2 Citation Presentation
+
+The citation screen supports:
+
+- Portrait photograph.
+- Name and title.
+- Long-form citation or biography.
+- Readable text layout.
+- Animated text appearance.
+- Optional scrolling for lengthy content.
+- Summit logo placement.
+- Manual transition to the next scene.
+
+The admin must be able to prepare citations ahead of the summit.
+
+The controller should not need to edit the citation during the live event unless a correction is necessary.
+
+---
+
+7. Scoreboard and Leaderboard System
+
+The platform must support manual score entry and automatic ranking.
+
+7.1 Scoreboard Configuration
+
+The admin can configure:
+
+- Competition or session title.
+- Team names.
+- Participant names.
+- Scores.
+- Ranking rules.
+- Tie-breaking rules.
+- Display mode.
+- Logo visibility.
+- Animation style.
+
+7.2 Scoreboard Display Modes
+
+Supported modes include:
+
+- Sequential rank reveal.
+- Full leaderboard reveal.
+- Top-three podium.
+- Team leaderboard.
+- Individual leaderboard.
+- Score-only display.
+- Live-updating leaderboard.
+
+7.3 Sequential Reveal
+
+The controller must be able to reveal positions one at a time.
+
+For example:
+
+1. Reveal first place.
+2. Reveal second place.
+3. Reveal third place.
+4. Reveal subsequent positions.
+
+The controller must also be able to display the complete leaderboard at once.
+
+7.4 Score Integrity
+
+- Rankings must be recalculated when scores change.
+- Ties must follow defined rules.
+- Manual score changes require appropriate permissions.
+- Important changes must be recorded in an audit log.
+- Private participant information must not be exposed publicly.
+- The displayed results must match the saved results.
+
+---
+
+8. Kahoot-Style Live Quiz Module
+
+The platform must implement its own interactive quiz experience inspired by the core live-game workflow of Kahoot.
+
+The application must not depend on manually switching between an external quiz website and the summit projection system.
+
+8.1 Quiz Setup
+
+The admin can configure:
+
+- Quiz title.
+- Question bank.
+- Question text.
+- Answer options.
+- Correct answers.
+- Question duration.
+- Points per question.
+- Optional speed bonuses.
+- Randomized question order.
+- Randomized answer order.
+- Lobby countdown.
+- Participant name rules.
+- Late-joining rules.
+- Leaderboard visibility.
+
+Questions must be validated before the game starts.
+
+8.2 Participant Joining
+
+The joining flow must work as follows:
+
+1. The controller launches the quiz.
+2. The server creates a quiz session.
+3. A unique game PIN and join URL are generated.
+4. The projection screen displays the PIN and QR code.
+5. Participants scan the QR code or open the join page.
+6. Participants enter the PIN and a display name.
+7. The controller sees the participants in the lobby.
+8. The controller starts the countdown.
+9. The game begins.
+
+The server must validate the game PIN, reject closed sessions and prevent unauthorized access to the active game.
+
+8.3 Participant Interface
+
+The participant interface must be mobile-friendly.
+
+It should include:
+
+- Join-game page.
+- Game PIN entry.
+- Display-name entry.
+- Lobby waiting screen.
+- Connection status.
+- Live question display.
+- Answer selection.
+- Submission confirmation.
+- Answer-result screen.
+- Personal score.
+- Final results.
+
+Participants must not be able to alter questions, scores, timers or the projection screen.
+
+8.4 Live Questions
+
+During the quiz:
+
+- The projection screen displays the question.
+- Answer options appear on the projection.
+- Participants select answers on their devices.
+- The server records answer submissions and timestamps.
+- A synchronized timer controls the deadline.
+- Late answers are rejected according to the game rules.
+- The controller can pause or advance the question.
+- The correct answer can be revealed when configured.
+- Results can show answer statistics and the leaderboard.
+
+The server must be authoritative for question timing and answer acceptance.
+
+8.5 Scoring and Results
+
+The game engine must calculate points from the configured scoring rules.
+
+Store:
+
+- Participant identifier.
+- Question identifier.
+- Submitted answer.
+- Submission timestamp.
+- Correctness.
+- Awarded points.
+
+Support missed questions, ties, reconnecting participants and duplicate-submission prevention.
+
+The final leaderboard must be available to the controller, admin and projection screen.
+
+8.6 Quiz Controller
+
+The controller must be able to:
+
+- Open and close the lobby.
+- Start the quiz.
+- Start or pause a question.
+- Extend or reset a timer where permitted.
+- Advance to the next question.
+- Reveal the correct answer.
+- Show answer statistics.
+- Show the leaderboard.
+- End the quiz.
+- Return to the summit presentation.
+
+The controller should see the current question, remaining time, participant count, submission count and next-question preview.
+
+---
+
+9. Graphics and Visual Identity
+
+The platform should have a consistent, professional visual identity suitable for a legislative summit.
+
+9.1 Recommended Theme
+
+Use:
+
+- Navy blue as the primary colour.
+- Gold as the accent colour.
+- White for readable text.
+- Subtle gradients.
+- Geometric patterns.
+- Professional typography.
+- Restrained glow and lighting effects.
+
+The design must look formal and premium rather than like a generic gaming website.
+
+9.2 Theme Management
+
+The admin should be able to select from predefined theme presets.
+
+The system should use consistent:
+
+- Colours.
+- Typography.
+- Spacing.
+- Logo placement.
+- Image proportions.
+- Scene templates.
+- Animation presets.
+
+Logo uploads must not automatically change theme colours.
+
+The admin should not need to modify CSS or manually configure colours for each scene.
+
+---
+
+10. Database and Data Structure
+
+Use a persistent database to store all event data.
+
+Recommended entities:
+
+- "events": Summit details and configuration.
+- "event_logos": Uploaded logos, order, primary-logo status and visibility settings.
+- "users": Authenticated users and roles.
+- "speakers": Names, portraits and official positions.
+- "citations": Biography and citation text.
+- "scenes": Projection templates and content.
+- "scene_queue": Presentation sequence and order.
+- "scoreboards": Competition definitions.
+- "teams": Registered teams.
+- "participants": Participant records.
+- "quiz_sessions": Active games and session status.
+- "questions": Questions, options and scoring settings.
+- "responses": Submitted answers and timestamps.
+- "scores": Calculated points and ranking data.
+- "audit_logs": Administrative actions and score changes.
+
+10.1 Logo Data
+
+Each event must have a related collection of one to five saved logos.
+
+Each logo record should contain:
+
+- Event identifier.
+- Storage path or URL.
+- Display name.
+- Display order.
+- Primary-logo flag.
+- Enabled or disabled status.
+- Visibility settings, where applicable.
+- Upload timestamp.
+
+Enforce the five-logo maximum on the server and database-operation layer, not only in the frontend.
+
+Use cloud storage for the image files and persistent database records for their metadata.
+
+---
+
+11. Recommended Technology Stack
+
+- Frontend: Next.js and TypeScript.
+- Styling: Tailwind CSS.
+- Animations: Framer Motion.
+- Database: PostgreSQL through Supabase.
+- Authentication: Supabase Auth.
+- Real-time communication: Supabase Realtime or an equivalent real-time service.
+- Image storage: Supabase Storage.
+- QR code generation: A maintained QR code library.
+- Deployment: Vercel.
+- Secure game logic: Server-side routes or dedicated server functions.
+
+The application must use secure server-side validation for permissions, quiz sessions, answer submission, timing and scoring.
+
+Test real-time capacity and service limits against the expected number of participants before the event.
+
+---
+
+12. Security and Reliability
+
+The application must include:
+
+- Secure admin authentication.
+- Role-based access control.
+- Server-side score calculation.
+- Server-side game PIN validation.
+- Rate limiting for joining and answer submissions.
+- Duplicate-submission prevention.
+- Audit logs for score changes.
+- Protection against unauthorized scene changes.
+- Persistent game state.
+- Recovery after controller disconnection.
+- Database backups.
+- Image upload validation.
+- Appropriate data access policies.
+- Clear handling of expired or closed quiz sessions.
+
+The projection screen must be read-only.
+
+The system should recover gracefully if the controller reconnects or the browser refreshes, without silently resetting the active game.
+
+---
+
+13. Development Phases
+
+Phase 1: Foundation and Branding
+
+- Initialize the application.
+- Configure the database.
+- Implement authentication and roles.
+- Build the admin dashboard.
+- Create event setup.
+- Implement upload, replacement, removal and reordering of up to five logos.
+- Add logo placement and visibility controls.
+- Implement the default summit theme.
+
+Phase 2: Projection and Controller
+
+- Build the full-screen projection route.
+- Create the scene library.
+- Implement private scene previews.
+- Implement live publishing.
+- Add scene sequencing.
+- Add transitions and animations.
+- Add connection status and holding screen.
+
+Phase 3: Speakers, Citations and Scoreboards
+
+- Implement speaker profiles.
+- Add portrait uploads.
+- Build citation templates.
+- Implement Speaking Now and topic announcements.
+- Build scoreboard configuration.
+- Implement sequential and full leaderboard reveals.
+- Add score validation and audit logs.
+
+Phase 4: Kahoot-Style Quiz
+
+- Implement the question bank.
+- Build the participant joining interface.
+- Generate game PINs and QR codes.
+- Implement the lobby.
+- Add synchronized question timers.
+- Implement answer collection and automatic scoring.
+- Add leaderboard and final results.
+- Connect quiz events to the projection screen and controller.
+
+Phase 5: Testing and Deployment
+
+- Test on phones, tablets and laptops.
+- Test projector resolutions.
+- Test multiple simultaneous participants.
+- Verify timer synchronization.
+- Verify scores and rankings.
+- Test controller disconnections.
+- Test logo uploads and visibility settings.
+- Test role permissions.
+- Test expected concurrent user load.
+- Deploy and rehearse with the actual event equipment.
+
+---
+
+14. Acceptance Criteria
+
+The platform is ready for use when all of the following work:
+
+- [ ] The admin can create and save a summit event.
+- [ ] The admin can upload between one and five logos.
+- [ ] The admin can replace, remove and reorder logos.
+- [ ] The admin can select a primary logo.
+- [ ] Logo layouts and visibility settings persist after refresh.
+- [ ] The five-logo maximum is enforced securely.
+- [ ] Logos display correctly across all configured scene templates.
+- [ ] The admin can manage speakers and citations.
+- [ ] The controller can preview content without changing the live projection.
+- [ ] Publishing a scene updates the projector in real time.
+- [ ] The projection screen runs independently in full-screen mode.
+- [ ] The controller can reveal scoreboard positions individually or all at once.
+- [ ] Participants can join the quiz using a PIN or QR code.
+- [ ] The controller can see participants in the lobby.
+- [ ] Questions and timers synchronize across devices.
+- [ ] The server validates answers and calculates scores.
+- [ ] Final rankings are accurate.
+- [ ] Reconnecting does not silently reset the game.
+- [ ] Unauthorized users cannot control the screen or modify scores.
+- [ ] The complete summit can be operated without switching to a separate external quiz platform.
+
+---
+
+15. Final Product Definition
+
+The finished product is the SRC Legislative Summit Projection and Interactive Quiz Platform.
+
+It is a unified event-management, projection and live competition system.
+
+The admin prepares the summit, including its branding, with support for up to five logos. The controller operates the event in real time. The projector displays the selected scene with professional graphics and animations. Participants join the integrated Kahoot-style quiz through their phones.
+
+The core principle is that the admin prepares the content, while the controller decides what the audience sees and when it appears.
+
+The platform must be designed for reliability, readability, ease of operation and a professional legislative-event experience.
