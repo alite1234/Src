@@ -1,0 +1,1 @@
+ALTER TABLE "live_state" ADD COLUMN "scene_snapshot" jsonb;
