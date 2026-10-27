@@ -1,15 +1,25 @@
 import Link from "next/link";
-import { ExternalLink, Radio, ShieldCheck } from "lucide-react";
+import { ExternalLink, Radio, ShieldCheck, Download, Share2 } from "lucide-react";
 
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { Wordmark } from "@/components/brand/wordmark";
 import { Badge } from "@/components/ui/badge";
-import { buttonStyles } from "@/components/ui/button";
+import { Button, buttonStyles } from "@/components/ui/button";
 import { requireUser } from "@/lib/auth/guards";
 
 export const dynamic = "force-dynamic";
 
-export const metadata = { title: "Controller" };
+export const metadata = {
+  title: "Controller",
+  description: "Live control dashboard for the SRC Legislative Summit.",
+  manifest: "/manifest.json",
+  themeColor: "#d4af37",
+  appleWebApp: {
+    title: "SRC Controller",
+    capable: true,
+    statusBarStyle: "black-translucent",
+  },
+};
 
 export default async function ControlLayout({
   children,
@@ -17,6 +27,13 @@ export default async function ControlLayout({
   children: React.ReactNode;
 }) {
   const user = await requireUser(["admin", "controller"]);
+
+  const handleInstall = async () => {
+    if (typeof window !== "undefined" && (window as any).BeforeInstallEvent) {
+      const event = (window as any).BeforeInstallEvent;
+      await event.prompt();
+    }
+  };
 
   return (
     <div className="min-h-dvh bg-navy-950">
@@ -28,31 +45,46 @@ export default async function ControlLayout({
       <div className="relative z-10 flex min-h-dvh flex-col">
         <header className="sticky top-0 z-30 border-b border-white/5 bg-navy-950/85 backdrop-blur-xl">
           <div className="mx-auto flex w-full max-w-[1680px] flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
-            <Link href="/control" className="min-w-0">
-              <Wordmark compact />
-            </Link>
-            <div className="flex flex-wrap items-center gap-2">
-              <Badge tone="gold">
+            <div className="flex items-center gap-2">
+              <Link href="/control" className="min-w-0">
+                <Wordmark compact />
+              </Link>
+              <Badge tone="gold" className="hidden sm:inline">
                 <Radio className="h-3 w-3" />
                 Controller
               </Badge>
+              <Badge tone="gold" className="sm:hidden">
+                <Radio className="h-3 w-3" />
+              </Badge>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleInstall}
+                title="Install controller app"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span className="sr-only">Install</span>
+              </Button>
+              <Link
+                href="/control"
+                target="_blank"
+                className={buttonStyles({ variant: "ghost", size: "sm" })}
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                <span className="sr-only">Open Projector</span>
+              </Link>
               {user.role === "admin" ? (
                 <Link
                   href="/admin"
                   className={buttonStyles({ variant: "ghost", size: "sm" })}
                 >
                   <ShieldCheck className="h-3.5 w-3.5" />
-                  Admin
+                  <span className="sr-only">Admin</span>
                 </Link>
               ) : null}
-              <Link
-                href="/project"
-                target="_blank"
-                className={buttonStyles({ variant: "secondary", size: "sm" })}
-              >
-                <ExternalLink className="h-3.5 w-3.5" />
-                Projector
-              </Link>
               <div className="hidden max-w-40 flex-col text-right sm:flex">
                 <span className="truncate text-xs text-mist-300">
                   {user.name}
