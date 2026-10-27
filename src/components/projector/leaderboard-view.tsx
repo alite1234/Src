@@ -68,6 +68,74 @@ function Podium({
   );
 }
 
+function Versus({ scoreboard }: { scoreboard: PublicScoreboard }) {
+  const [first, second] = scoreboard.entries;
+
+  const side = (
+    entry: PublicScoreboard["entries"][number] | undefined,
+    align: "left" | "right",
+  ) => (
+    <motion.div
+      initial={{ opacity: 0, x: align === "left" ? "-6%" : "6%" }}
+      animate={{ opacity: 1, x: "0%" }}
+      transition={{ duration: 0.5 }}
+      className="flex min-w-0 flex-1 flex-col items-center justify-center text-center"
+    >
+      <p className="max-w-full truncate font-display text-[3.4cqw] leading-tight">
+        {entry?.name ?? "Awaiting result"}
+      </p>
+      <div
+        className={`mt-[1.4cqh] h-[0.35cqh] w-[10cqw] rounded-full ${
+          align === "left"
+            ? "bg-[var(--stage-accent)]"
+            : "bg-[var(--stage-accent-2)]"
+        }`}
+      />
+      <p className="mt-[1.6cqh] font-display text-[6.5cqw] leading-none text-[var(--stage-accent-2)]">
+        {entry ? <CountUp value={entry.score} /> : "–"}
+      </p>
+      <p className="mt-[0.8cqh] text-[1cqw] uppercase tracking-[0.3em] text-[var(--stage-muted)]">
+        points
+      </p>
+    </motion.div>
+  );
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="shrink-0 text-center">
+        <p className="text-[1.15cqw] font-semibold uppercase tracking-[0.42em] text-[var(--stage-accent)]">
+          {scoreboard.mode === "team" ? "Head to head" : "Final showdown"}
+        </p>
+        <h2 className="mt-[1.2cqh] font-display text-[3.8cqw] leading-none">
+          {scoreboard.title}
+        </h2>
+        {scoreboard.description ? (
+          <p className="mt-[1cqh] text-[1.3cqw] text-[var(--stage-muted)]">
+            {scoreboard.description}
+          </p>
+        ) : null}
+      </div>
+
+      <div className="flex min-h-0 flex-1 items-center gap-[2cqw] px-[2cqw]">
+        {side(first, "left")}
+        <div className="flex shrink-0 flex-col items-center gap-[0.8cqh]">
+          <span className="font-display text-[4.6cqw] leading-none text-[var(--stage-accent)]">
+            VS
+          </span>
+          <div className="h-[0.3cqh] w-[6cqw] rounded-full bg-[var(--stage-accent)]/40" />
+        </div>
+        {side(second, "right")}
+      </div>
+
+      {scoreboard.totalEntries > 2 ? (
+        <p className="shrink-0 pb-[1cqh] text-center text-[1cqw] uppercase tracking-[0.24em] text-[var(--stage-muted)]">
+          Top two of {scoreboard.totalEntries} entries shown
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 export function LeaderboardView({
   scoreboard,
 }: {
@@ -103,6 +171,8 @@ export function LeaderboardView({
           </div>
         ) : scoreboard.displayMode === "podium" ? (
           <Podium scoreboard={scoreboard} />
+        ) : scoreboard.displayMode === "versus" ? (
+          <Versus scoreboard={scoreboard} />
         ) : (
           <ol className="mx-auto flex max-w-[78cqw] flex-col gap-[1cqh]">
             {shown.map((entry, index) => (
@@ -136,7 +206,8 @@ export function LeaderboardView({
       </div>
 
       {scoreboard.totalEntries > shown.length &&
-      scoreboard.displayMode !== "podium" ? (
+      scoreboard.displayMode !== "podium" &&
+      scoreboard.displayMode !== "versus" ? (
         <p className="mt-[1.2cqh] shrink-0 text-center text-[1.05cqw] uppercase tracking-[0.24em] text-[var(--stage-muted)]">
           {scoreboard.totalEntries - shown.length} more on the full board ·{" "}
           {formatScore(scoreboard.totalEntries)} entries

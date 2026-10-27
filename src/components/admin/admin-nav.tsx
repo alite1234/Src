@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   AudioLines,
+  CalendarRange,
   ClipboardList,
   Image as ImageIcon,
   LayoutDashboard,
@@ -21,6 +22,7 @@ const links = [
   { href: "/admin/speakers", label: "Speakers", icon: UsersRound },
   { href: "/admin/scenes", label: "Scenes", icon: ListOrdered },
   { href: "/admin/scoreboard", label: "Scoreboard", icon: Trophy },
+  { href: "/admin/fixtures", label: "Fixtures", icon: CalendarRange },
   { href: "/admin/quiz", label: "Quiz", icon: ClipboardList },
   { href: "/admin/users", label: "Users", icon: AudioLines },
   { href: "/admin/audit", label: "Audit log", icon: ScrollText },

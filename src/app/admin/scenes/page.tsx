@@ -17,20 +17,17 @@ import {
   removeSceneFromQueueAction,
   updateSceneAction,
 } from "@/app/admin/scenes/actions";
+import { SceneFields } from "@/components/admin/scene-fields";
 import { AdminNotice, PageHeader } from "@/components/admin/page-header";
 import { ActionForm } from "@/components/forms/action-form";
 import { ConfirmSubmitButton } from "@/components/forms/confirm-submit-button";
+import { QuickActionForm } from "@/components/forms/quick-action-form";
 import { SceneView } from "@/components/projector/scene-view";
 import { Badge } from "@/components/ui/badge";
 import { buttonStyles } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
-import {
-  ANIMATION_PRESETS,
-  SCENE_TYPES,
-  SCENE_TYPE_MAP,
-} from "@/lib/constants";
+import { SCENE_TYPE_MAP } from "@/lib/constants";
 import {
   getActiveEvent,
   getEventLogos,
@@ -40,119 +37,10 @@ import {
   getEventSpeakers,
   toPublicEvent,
 } from "@/lib/data/events";
-import type { PublicScene } from "@/lib/types";
-import type { Speaker } from "@/lib/db/schema";
 
 export const dynamic = "force-dynamic";
 
 export const metadata = { title: "Scenes" };
-
-function SceneFields({
-  scene,
-  speakers,
-}: {
-  scene?: PublicScene;
-  speakers: Speaker[];
-}) {
-  return (
-    <>
-      {scene ? <input type="hidden" name="sceneId" value={scene.id} /> : null}
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Scene type">
-          <Select name="type" defaultValue={scene?.type ?? "welcome"}>
-            {SCENE_TYPES.filter((type) => type.creatable).map((type) => (
-              <option key={type.value} value={type.value}>
-                {type.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Scene title">
-          <Input
-            name="title"
-            required
-            defaultValue={scene?.title ?? ""}
-            placeholder="Opening welcome"
-          />
-        </Field>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Speaker" hint="Used by speaker intro, citation and Speaking Now scenes.">
-          <Select name="speakerId" defaultValue={scene?.speaker?.id ?? ""}>
-            <option value="">No speaker</option>
-            {speakers.map((speaker) => (
-              <option key={speaker.id} value={speaker.id}>
-                {speaker.fullName}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field label="Animation">
-          <Select name="animation" defaultValue={scene?.animation ?? "fade"}>
-            {ANIMATION_PRESETS.map((preset) => (
-              <option key={preset.value} value={preset.value}>
-                {preset.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Display duration (seconds)" hint="Optional reference for the controller.">
-          <Input
-            type="number"
-            name="durationSeconds"
-            min={5}
-            max={3600}
-            defaultValue={scene?.durationSeconds ?? ""}
-            placeholder="No timer"
-          />
-        </Field>
-        <Field label="Logos on this scene">
-          <Select
-            name="logoMode"
-            defaultValue={scene?.logoVisibility?.mode ?? "inherit"}
-          >
-            <option value="inherit">Inherit event settings</option>
-            <option value="show">Always show</option>
-            <option value="hide">Always hide</option>
-          </Select>
-        </Field>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Heading override">
-          <Input
-            name="heading"
-            defaultValue={scene?.content.heading ?? ""}
-            placeholder="Defaults to the scene title"
-          />
-        </Field>
-        <Field label="Subheading">
-          <Input
-            name="subheading"
-            defaultValue={scene?.content.subheading ?? ""}
-            placeholder="Optional supporting line"
-          />
-        </Field>
-      </div>
-      <Field label="Body text">
-        <Textarea
-          name="body"
-          defaultValue={scene?.content.body ?? ""}
-          placeholder="Main message for this scene."
-          className="min-h-28"
-        />
-      </Field>
-      <Field label="Footer label">
-        <Input
-          name="footer"
-          defaultValue={scene?.content.footer ?? ""}
-          placeholder="Optional small label"
-        />
-      </Field>
-    </>
-  );
-}
 
 export default async function ScenesPage() {
   const event = await getActiveEvent();
@@ -234,7 +122,7 @@ export default async function ScenesPage() {
                     return (
                       <li
                         key={item.id}
-                        className="flex items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2"
+                        className="flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-3 py-2"
                       >
                         <span className="w-6 shrink-0 text-center font-display text-sm text-gold-400">
                           {index + 1}
@@ -248,7 +136,7 @@ export default async function ScenesPage() {
                           </p>
                         </div>
                         <div className="flex items-center gap-0.5">
-                          <form action={moveSceneInQueueAction}>
+                          <QuickActionForm action={moveSceneInQueueAction}>
                             <input type="hidden" name="itemId" value={item.id} />
                             <input type="hidden" name="direction" value="up" />
                             <button
@@ -262,8 +150,8 @@ export default async function ScenesPage() {
                             >
                               <ArrowUp className="h-3.5 w-3.5" />
                             </button>
-                          </form>
-                          <form action={moveSceneInQueueAction}>
+                          </QuickActionForm>
+                          <QuickActionForm action={moveSceneInQueueAction}>
                             <input type="hidden" name="itemId" value={item.id} />
                             <input type="hidden" name="direction" value="down" />
                             <button
@@ -277,8 +165,8 @@ export default async function ScenesPage() {
                             >
                               <ArrowDown className="h-3.5 w-3.5" />
                             </button>
-                          </form>
-                          <form action={removeSceneFromQueueAction}>
+                          </QuickActionForm>
+                          <QuickActionForm action={removeSceneFromQueueAction}>
                             <input type="hidden" name="itemId" value={item.id} />
                             <button
                               type="submit"
@@ -290,7 +178,7 @@ export default async function ScenesPage() {
                             >
                               <X className="h-3.5 w-3.5" />
                             </button>
-                          </form>
+                          </QuickActionForm>
                         </div>
                       </li>
                     );
@@ -366,12 +254,13 @@ export default async function ScenesPage() {
 
                       <div className="flex flex-wrap items-center gap-2">
                         {!queuedIds.has(scene.id) ? (
-                          <form action={addSceneToQueueAction}>
-                            <input
-                              type="hidden"
-                              name="sceneId"
-                              value={scene.id}
-                            />
+                          <ActionForm
+                            action={addSceneToQueueAction}
+                            submitLabel="Add to queue"
+                            variant="secondary"
+                            size="sm"
+                            hideSubmit
+                          >
                             <button
                               type="submit"
                               className={buttonStyles({
@@ -382,9 +271,13 @@ export default async function ScenesPage() {
                               <Plus className="h-3.5 w-3.5" />
                               Add to queue
                             </button>
-                          </form>
+                          </ActionForm>
                         ) : null}
-                        <form action={deleteSceneAction}>
+                        <ActionForm
+                          action={deleteSceneAction}
+                          submitLabel="Delete"
+                          hideSubmit
+                        >
                           <input
                             type="hidden"
                             name="sceneId"
@@ -398,7 +291,7 @@ export default async function ScenesPage() {
                             <Trash2 className="h-3.5 w-3.5" />
                             Delete
                           </ConfirmSubmitButton>
-                        </form>
+                        </ActionForm>
                       </div>
 
                       <details className="rounded-xl border border-white/8 bg-white/[0.02]">
@@ -410,7 +303,11 @@ export default async function ScenesPage() {
                             action={updateSceneAction}
                             submitLabel="Save scene"
                           >
-                            <SceneFields scene={scene} speakers={speakers} />
+                            <SceneFields
+                              eventId={event.id}
+                              scene={scene}
+                              speakers={speakers}
+                            />
                           </ActionForm>
                         </div>
                       </details>
@@ -434,7 +331,7 @@ export default async function ScenesPage() {
                 submitLabel="Create scene"
                 pendingLabel="Creating…"
               >
-                <SceneFields speakers={speakers} />
+                <SceneFields eventId={event.id} speakers={speakers} />
               </ActionForm>
             </CardBody>
           </Card>

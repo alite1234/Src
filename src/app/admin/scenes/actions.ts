@@ -1,6 +1,6 @@
 "use server";
 
-import { and, asc, eq } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 import { z } from "zod";
 
 import { adminContext, revalidateSummit } from "@/lib/admin-context";
@@ -8,6 +8,9 @@ import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTIONS, SCENE_TYPES } from "@/lib/constants";
 import { db } from "@/lib/db";
 import { sceneQueue, scenes, speakers } from "@/lib/db/schema";
+import { getLiveState } from "@/lib/data/live";
+import { publishEventUpdate } from "@/lib/realtime/server";
+import { updateLiveState } from "@/lib/live-control";
 import type { ActionState } from "@/lib/action-state";
 import type {
   AnimationPreset,
@@ -29,8 +32,16 @@ const creatableTypes = SCENE_TYPES.filter((item) => item.creatable).map(
   (item) => item.value,
 ) as [SceneType, ...SceneType[]];
 
+const SPEAKER_REQUIRED_TYPES: SceneType[] = [
+  "speaker_intro",
+  "speaking_now",
+  "citation",
+];
+
 const uuidPattern =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0];
 
 const sceneSchema = z.object({
   type: z.enum(creatableTypes),
@@ -41,6 +52,13 @@ const sceneSchema = z.object({
     .refine(
       (value) => value === "" || uuidPattern.test(value),
       "Choose a valid speaker.",
+    ),
+  backgroundFileId: z
+    .string()
+    .trim()
+    .refine(
+      (value) => value === "" || uuidPattern.test(value),
+      "Choose a valid background image.",
     ),
   animation: z.enum(animations),
   durationSeconds: z.preprocess(
@@ -62,6 +80,7 @@ function formDataToScene(formData: FormData) {
     type: String(formData.get("type") ?? ""),
     title: String(formData.get("title") ?? ""),
     speakerId: String(formData.get("speakerId") ?? ""),
+    backgroundFileId: String(formData.get("backgroundFileId") ?? ""),
     animation: String(formData.get("animation") ?? "fade"),
     durationSeconds: String(formData.get("durationSeconds") ?? ""),
     heading: String(formData.get("heading") ?? ""),
@@ -106,6 +125,58 @@ async function validateSpeaker(
   return Boolean(speaker);
 }
 
+async function nextDisplayOrder(tx: Tx, eventId: string) {
+  const [row] = await tx
+    .select({
+      value: sql<number>`coalesce(max(${scenes.displayOrder}), -1)`,
+    })
+    .from(scenes)
+    .where(eq(scenes.eventId, eventId));
+  return Number(row?.value ?? -1) + 1;
+}
+
+async function nextQueuePosition(tx: Tx, eventId: string) {
+  const [row] = await tx
+    .select({
+      value: sql<number>`coalesce(max(${sceneQueue.position}), -1)`,
+    })
+    .from(sceneQueue)
+    .where(eq(sceneQueue.eventId, eventId));
+  return Number(row?.value ?? -1) + 1;
+}
+
+function positionCase(orderedIds: string[]) {
+  return sql`case ${sql.join(
+    orderedIds.map(
+      (id, index) => sql`when ${sceneQueue.id} = ${id}::uuid then ${index}`,
+    ),
+    sql` `,
+  )} else ${sceneQueue.position} end`;
+}
+
+async function renumberQueue(
+  tx: Tx,
+  eventId: string,
+  orderedIds: string[],
+) {
+  if (orderedIds.length === 0) return;
+  await tx
+    .update(sceneQueue)
+    .set({ position: positionCase(orderedIds) })
+    .where(
+      and(eq(sceneQueue.eventId, eventId), inArray(sceneQueue.id, orderedIds)),
+    );
+}
+
+async function queueOrder(eventId: string) {
+  const rows = await db
+    .select({ id: sceneQueue.id })
+    .from(sceneQueue)
+    .where(eq(sceneQueue.eventId, eventId))
+    .orderBy(asc(sceneQueue.position), asc(sceneQueue.createdAt));
+  return rows.map((row) => row.id);
+}
+
 export async function createSceneAction(
   _state: ActionState,
   formData: FormData,
@@ -117,18 +188,20 @@ export async function createSceneAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check the form." };
   }
+  if (
+    SPEAKER_REQUIRED_TYPES.includes(parsed.data.type) &&
+    !optional(parsed.data.speakerId)
+  ) {
+    return {
+      error: "This scene type needs a speaker. Choose one from the list.",
+    };
+  }
   if (!(await validateSpeaker(ctx.event.id, optional(parsed.data.speakerId)))) {
     return { error: "That speaker does not belong to this summit." };
   }
 
-  const existing = await db
-    .select({ displayOrder: scenes.displayOrder })
-    .from(scenes)
-    .where(eq(scenes.eventId, ctx.event.id));
-  const nextOrder =
-    existing.reduce((max, row) => Math.max(max, row.displayOrder), -1) + 1;
-
   const [created] = await db.transaction(async (tx) => {
+    const displayOrder = await nextDisplayOrder(tx, ctx.event.id);
     const [scene] = await tx
       .insert(scenes)
       .values({
@@ -136,25 +209,20 @@ export async function createSceneAction(
         type: parsed.data.type,
         title: parsed.data.title,
         speakerId: optional(parsed.data.speakerId),
+        backgroundFileId: optional(parsed.data.backgroundFileId),
         animation: parsed.data.animation,
         durationSeconds: parsed.data.durationSeconds,
         content: contentFrom(parsed.data),
         logoVisibility: logoOverrideFrom(parsed.data),
-        displayOrder: nextOrder,
+        displayOrder,
       })
       .returning();
 
-    const queue = await tx
-      .select({ position: sceneQueue.position })
-      .from(sceneQueue)
-      .where(eq(sceneQueue.eventId, ctx.event.id));
-    const nextPosition =
-      queue.reduce((max, row) => Math.max(max, row.position), -1) + 1;
-
+    const position = await nextQueuePosition(tx, ctx.event.id);
     await tx.insert(sceneQueue).values({
       eventId: ctx.event.id,
       sceneId: scene.id,
-      position: nextPosition,
+      position,
     });
 
     return [scene];
@@ -191,6 +259,14 @@ export async function updateSceneAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Check the form." };
   }
+  if (
+    SPEAKER_REQUIRED_TYPES.includes(parsed.data.type) &&
+    !optional(parsed.data.speakerId)
+  ) {
+    return {
+      error: "This scene type needs a speaker. Choose one from the list.",
+    };
+  }
   if (!(await validateSpeaker(ctx.event.id, optional(parsed.data.speakerId)))) {
     return { error: "That speaker does not belong to this summit." };
   }
@@ -201,6 +277,7 @@ export async function updateSceneAction(
       type: parsed.data.type,
       title: parsed.data.title,
       speakerId: optional(parsed.data.speakerId),
+      backgroundFileId: optional(parsed.data.backgroundFileId),
       animation: parsed.data.animation,
       durationSeconds: parsed.data.durationSeconds,
       content: contentFrom(parsed.data),
@@ -223,37 +300,78 @@ export async function updateSceneAction(
   };
 }
 
-export async function deleteSceneAction(formData: FormData) {
+export async function deleteSceneAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const ctx = await adminContext();
-  if (!ctx.ok) return;
+  if (!ctx.ok) return { error: ctx.error };
   const sceneId = String(formData.get("sceneId") ?? "");
   const [existing] = await db
     .select()
     .from(scenes)
     .where(eq(scenes.id, sceneId))
     .limit(1);
-  if (!existing || existing.eventId !== ctx.event.id) return;
+  if (!existing || existing.eventId !== ctx.event.id) {
+    return { error: "That scene could not be found." };
+  }
 
-  await db.delete(scenes).where(eq(scenes.id, sceneId));
+  const live = await getLiveState(ctx.event.id);
+  const wasLive = live?.sceneId === sceneId;
+
+  await db.transaction(async (tx) => {
+    await tx.delete(scenes).where(eq(scenes.id, sceneId));
+    const remainingIds = await tx
+      .select({ id: sceneQueue.id })
+      .from(sceneQueue)
+      .where(eq(sceneQueue.eventId, ctx.event.id))
+      .orderBy(asc(sceneQueue.position), asc(sceneQueue.createdAt));
+    await renumberQueue(
+      tx,
+      ctx.event.id,
+      remainingIds.map((row) => row.id),
+    );
+  });
+
+  if (wasLive) {
+    await updateLiveState(ctx.event.id, {
+      mode: "holding",
+      sceneId: null,
+      sceneSnapshot: null,
+    });
+    await publishEventUpdate(ctx.event.id);
+  }
+
   await logAudit({
     eventId: ctx.event.id,
     userId: ctx.user.id,
     action: AUDIT_ACTIONS.sceneDeleted,
-    details: { sceneId, title: existing.title },
+    details: { sceneId, title: existing.title, wasLive },
   });
   revalidateSummit();
+  return {
+    ok: true,
+    message: wasLive
+      ? "Scene deleted. The projector returned to standby."
+      : "Scene deleted.",
+  };
 }
 
-export async function addSceneToQueueAction(formData: FormData) {
+export async function addSceneToQueueAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const ctx = await adminContext();
-  if (!ctx.ok) return;
+  if (!ctx.ok) return { error: ctx.error };
   const sceneId = String(formData.get("sceneId") ?? "");
   const [scene] = await db
     .select()
     .from(scenes)
     .where(eq(scenes.id, sceneId))
     .limit(1);
-  if (!scene || scene.eventId !== ctx.event.id) return;
+  if (!scene || scene.eventId !== ctx.event.id) {
+    return { error: "That scene could not be found." };
+  }
 
   const [already] = await db
     .select({ id: sceneQueue.id })
@@ -265,19 +383,17 @@ export async function addSceneToQueueAction(formData: FormData) {
       ),
     )
     .limit(1);
-  if (already) return;
+  if (already) {
+    return { error: "That scene is already in the queue." };
+  }
 
-  const queue = await db
-    .select({ position: sceneQueue.position })
-    .from(sceneQueue)
-    .where(eq(sceneQueue.eventId, ctx.event.id));
-  const nextPosition =
-    queue.reduce((max, row) => Math.max(max, row.position), -1) + 1;
-
-  await db.insert(sceneQueue).values({
-    eventId: ctx.event.id,
-    sceneId,
-    position: nextPosition,
+  await db.transaction(async (tx) => {
+    const position = await nextQueuePosition(tx, ctx.event.id);
+    await tx.insert(sceneQueue).values({
+      eventId: ctx.event.id,
+      sceneId,
+      position,
+    });
   });
   await logAudit({
     eventId: ctx.event.id,
@@ -286,32 +402,37 @@ export async function addSceneToQueueAction(formData: FormData) {
     details: { sceneId, action: "added" },
   });
   revalidateSummit();
+  return { ok: true, message: "Scene added to the queue." };
 }
 
-export async function removeSceneFromQueueAction(formData: FormData) {
+export async function removeSceneFromQueueAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const ctx = await adminContext();
-  if (!ctx.ok) return;
+  if (!ctx.ok) return { error: ctx.error };
   const itemId = String(formData.get("itemId") ?? "");
   const [item] = await db
     .select()
     .from(sceneQueue)
     .where(eq(sceneQueue.id, itemId))
     .limit(1);
-  if (!item || item.eventId !== ctx.event.id) return;
+  if (!item || item.eventId !== ctx.event.id) {
+    return { error: "That queue item could not be found." };
+  }
 
   await db.transaction(async (tx) => {
     await tx.delete(sceneQueue).where(eq(sceneQueue.id, itemId));
-    const remaining = await tx
-      .select()
+    const remainingIds = await tx
+      .select({ id: sceneQueue.id })
       .from(sceneQueue)
       .where(eq(sceneQueue.eventId, ctx.event.id))
       .orderBy(asc(sceneQueue.position), asc(sceneQueue.createdAt));
-    for (let position = 0; position < remaining.length; position += 1) {
-      await tx
-        .update(sceneQueue)
-        .set({ position })
-        .where(eq(sceneQueue.id, remaining[position].id));
-    }
+    await renumberQueue(
+      tx,
+      ctx.event.id,
+      remainingIds.map((row) => row.id),
+    );
   });
 
   await logAudit({
@@ -321,38 +442,36 @@ export async function removeSceneFromQueueAction(formData: FormData) {
     details: { sceneId: item.sceneId, action: "removed" },
   });
   revalidateSummit();
+  return { ok: true, message: "Removed from the queue." };
 }
 
-export async function moveSceneInQueueAction(formData: FormData) {
+export async function moveSceneInQueueAction(
+  _state: ActionState,
+  formData: FormData,
+): Promise<ActionState> {
   const ctx = await adminContext();
-  if (!ctx.ok) return;
+  if (!ctx.ok) return { error: ctx.error };
   const itemId = String(formData.get("itemId") ?? "");
   const direction = String(formData.get("direction") ?? "");
-  if (direction !== "up" && direction !== "down") return;
+  if (direction !== "up" && direction !== "down") {
+    return { error: "Unknown move direction." };
+  }
 
-  const queue = await db
-    .select()
-    .from(sceneQueue)
-    .where(eq(sceneQueue.eventId, ctx.event.id))
-    .orderBy(asc(sceneQueue.position), asc(sceneQueue.createdAt));
-
-  const index = queue.findIndex((item) => item.id === itemId);
+  const orderedIds = await queueOrder(ctx.event.id);
+  const index = orderedIds.indexOf(itemId);
   const target = direction === "up" ? index - 1 : index + 1;
-  if (index < 0 || target < 0 || target >= queue.length) return;
+  if (index < 0 || target < 0 || target >= orderedIds.length) {
+    return { error: "That queue item could not be moved." };
+  }
 
-  const reordered = [...queue];
+  const reordered = [...orderedIds];
   [reordered[index], reordered[target]] = [
     reordered[target],
     reordered[index],
   ];
 
   await db.transaction(async (tx) => {
-    for (let position = 0; position < reordered.length; position += 1) {
-      await tx
-        .update(sceneQueue)
-        .set({ position })
-        .where(eq(sceneQueue.id, reordered[position].id));
-    }
+    await renumberQueue(tx, ctx.event.id, reordered);
   });
   await logAudit({
     eventId: ctx.event.id,
@@ -361,4 +480,5 @@ export async function moveSceneInQueueAction(formData: FormData) {
     details: { itemId, direction },
   });
   revalidateSummit();
+  return { ok: true };
 }

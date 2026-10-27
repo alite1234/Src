@@ -4,6 +4,8 @@ import { db } from "@/lib/db";
 import {
   eventLogos,
   events,
+  files,
+  fixtures,
   questions,
   quizzes,
   sceneQueue,
@@ -23,6 +25,7 @@ import {
 import { publicFileUrl } from "@/lib/files";
 import type {
   PublicEvent,
+  PublicFixture,
   PublicLogo,
   PublicScene,
   PublicScoreboard,
@@ -157,9 +160,51 @@ export async function getEventSpeakers(eventId: string) {
     .orderBy(asc(speakers.displayOrder), asc(speakers.createdAt));
 }
 
+export function toPublicFixture(fixture: {
+  id: string;
+  stage: string;
+  teamA: string;
+  teamB: string;
+  scoreA: number | null;
+  scoreB: number | null;
+  scheduledAt: Date | null;
+  venue: string | null;
+  status: "scheduled" | "live" | "completed";
+}): PublicFixture {
+  return {
+    id: fixture.id,
+    stage: fixture.stage,
+    teamA: fixture.teamA,
+    teamB: fixture.teamB,
+    scoreA: fixture.scoreA,
+    scoreB: fixture.scoreB,
+    scheduledAt: fixture.scheduledAt
+      ? fixture.scheduledAt.toISOString()
+      : null,
+    venue: fixture.venue,
+    status: fixture.status,
+  };
+}
+
+export async function getEventFixtures(
+  eventId: string,
+): Promise<PublicFixture[]> {
+  const rows = await db
+    .select()
+    .from(fixtures)
+    .where(eq(fixtures.eventId, eventId))
+    .orderBy(asc(fixtures.displayOrder), asc(fixtures.createdAt));
+  return rows.map(toPublicFixture);
+}
+
 export function toPublicScene(
   scene: Scene,
   speaker: Speaker | null,
+  extras: {
+    backgroundFileId?: string | null;
+    backgroundUrl?: string | null;
+    fixtures?: PublicFixture[] | null;
+  } = {},
 ): PublicScene {
   return {
     id: scene.id,
@@ -169,7 +214,10 @@ export function toPublicScene(
     animation: scene.animation,
     durationSeconds: scene.durationSeconds,
     logoVisibility: scene.logoVisibility,
+    backgroundFileId: extras.backgroundFileId ?? null,
+    backgroundUrl: extras.backgroundUrl ?? null,
     speaker: speaker ? toPublicSpeaker(speaker) : null,
+    fixtures: scene.type === "fixtures" ? (extras.fixtures ?? []) : null,
   };
 }
 
@@ -178,24 +226,43 @@ export async function getPublicSceneById(
   sceneId: string,
 ): Promise<PublicScene | null> {
   const [row] = await db
-    .select({ scene: scenes, speaker: speakers })
+    .select({ scene: scenes, speaker: speakers, backgroundId: files.id })
     .from(scenes)
     .leftJoin(speakers, eq(scenes.speakerId, speakers.id))
+    .leftJoin(files, eq(scenes.backgroundFileId, files.id))
     .where(and(eq(scenes.id, sceneId), eq(scenes.eventId, eventId)))
     .limit(1);
   if (!row) return null;
-  return toPublicScene(row.scene, row.speaker);
+  const fixturesForScene =
+    row.scene.type === "fixtures"
+      ? await getEventFixtures(eventId)
+      : undefined;
+  return toPublicScene(row.scene, row.speaker, {
+    backgroundFileId: row.scene.backgroundFileId,
+    backgroundUrl: row.backgroundId ? publicFileUrl(row.backgroundId) : null,
+    fixtures: fixturesForScene,
+  });
 }
 
 export async function getEventScenes(eventId: string) {
   const rows = await db
-    .select({ scene: scenes, speaker: speakers })
+    .select({ scene: scenes, speaker: speakers, backgroundId: files.id })
     .from(scenes)
     .leftJoin(speakers, eq(scenes.speakerId, speakers.id))
+    .leftJoin(files, eq(scenes.backgroundFileId, files.id))
     .where(eq(scenes.eventId, eventId))
     .orderBy(asc(scenes.displayOrder), asc(scenes.createdAt));
 
-  return rows.map((row) => toPublicScene(row.scene, row.speaker));
+  const needsFixtures = rows.some((row) => row.scene.type === "fixtures");
+  const fixtureRows = needsFixtures ? await getEventFixtures(eventId) : [];
+
+  return rows.map((row) =>
+    toPublicScene(row.scene, row.speaker, {
+      backgroundFileId: row.scene.backgroundFileId,
+      backgroundUrl: row.backgroundId ? publicFileUrl(row.backgroundId) : null,
+      fixtures: fixtureRows,
+    }),
+  );
 }
 
 export async function getEventQueue(eventId: string) {

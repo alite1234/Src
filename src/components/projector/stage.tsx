@@ -144,6 +144,7 @@ export function stageVisibilityKey(type: SceneType): VisibilityKey {
   if (type === "speaker_intro" || type === "speaking_now") return "speaker";
   if (type === "citation") return "citation";
   if (type === "scoreboard") return "scoreboard";
+  if (type === "fixtures") return "fixtures";
   if (type === "countdown") return "countdown";
   if (type === "break") return "break";
   if (type === "closing") return "closing";

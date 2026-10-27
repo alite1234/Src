@@ -89,6 +89,13 @@ export const SCENE_TYPES: {
     creatable: true,
   },
   {
+    value: "fixtures",
+    label: "Fixtures & Table Draw",
+    description: "Match draw, versus cards and group tables.",
+    visibilityKey: "fixtures",
+    creatable: true,
+  },
+  {
     value: "break",
     label: "Break Screen",
     description: "Displayed while the summit is on a short break.",
@@ -166,6 +173,7 @@ export const VISIBILITY_KEYS: { key: VisibilityKey; label: string }[] = [
   { key: "announcement", label: "Topic & general announcements" },
   { key: "quiz", label: "Quiz lobby, questions & reveals" },
   { key: "scoreboard", label: "Scoreboards & leaderboards" },
+  { key: "fixtures", label: "Fixtures & table draws" },
   { key: "countdown", label: "Countdown screens" },
   { key: "break", label: "Break screens" },
   { key: "closing", label: "Closing screens" },
@@ -281,6 +289,7 @@ export const SCOREBOARD_DISPLAY_MODES = [
   { value: "sequential", label: "Sequential rank reveal" },
   { value: "full", label: "Full leaderboard" },
   { value: "podium", label: "Top-three podium" },
+  { value: "versus", label: "Head-to-head versus" },
   { value: "score_only", label: "Score-only display" },
 ] as const;
 
@@ -300,6 +309,9 @@ export const AUDIT_ACTIONS = {
   queueUpdated: "queue.updated",
   scoreboardUpdated: "scoreboard.updated",
   scoreChanged: "score.changed",
+  fixtureCreated: "fixture.created",
+  fixtureUpdated: "fixture.updated",
+  fixtureDeleted: "fixture.deleted",
   quizUpdated: "quiz.updated",
   questionCreated: "question.created",
   questionUpdated: "question.updated",

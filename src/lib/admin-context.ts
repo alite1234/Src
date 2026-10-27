@@ -30,6 +30,7 @@ export function revalidateSummit() {
     "/admin/speakers",
     "/admin/scenes",
     "/admin/scoreboard",
+    "/admin/fixtures",
     "/admin/quiz",
     "/admin/users",
     "/admin/audit",

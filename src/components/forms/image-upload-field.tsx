@@ -20,7 +20,7 @@ export function ImageUploadField({
 }: {
   name: string;
   label: string;
-  kind: "speaker_photo" | "speaker_background";
+  kind: "speaker_photo" | "speaker_background" | "scene_background";
   eventId: string;
   initialFileId?: string | null;
   initialUrl?: string | null;

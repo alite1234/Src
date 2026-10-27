@@ -40,6 +40,18 @@ export function formatDateTime(value: Date | string | null | undefined) {
   }).format(date);
 }
 
+export function formatFixtureKickoff(value: string | null | undefined) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-GB", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 export function formatClock(totalSeconds: number) {
   const safe = Math.max(0, Math.ceil(totalSeconds));
   const minutes = Math.floor(safe / 60);

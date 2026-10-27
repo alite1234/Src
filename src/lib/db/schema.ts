@@ -177,6 +177,9 @@ export const scenes = pgTable(
     speakerId: uuid("speaker_id").references(() => speakers.id, {
       onDelete: "set null",
     }),
+    backgroundFileId: uuid("background_file_id").references(() => files.id, {
+      onDelete: "set null",
+    }),
     animation: text("animation")
       .$type<AnimationPreset>()
       .notNull()
@@ -213,6 +216,32 @@ export const sceneQueue = pgTable(
     index("scene_queue_event_idx").on(table.eventId, table.position),
     uniqueIndex("scene_queue_scene_unique").on(table.eventId, table.sceneId),
   ],
+);
+
+export const fixtures = pgTable(
+  "fixtures",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => events.id, { onDelete: "cascade" }),
+    stage: text("stage").notNull().default("Group stage"),
+    teamA: text("team_a").notNull(),
+    teamB: text("team_b").notNull(),
+    scoreA: integer("score_a"),
+    scoreB: integer("score_b"),
+    scheduledAt: timestamp("scheduled_at", { withTimezone: true }),
+    venue: text("venue"),
+    status: text("status").$type<"scheduled" | "live" | "completed">().notNull().default("scheduled"),
+    displayOrder: integer("display_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [index("fixtures_event_idx").on(table.eventId, table.displayOrder)],
 );
 
 export const scoreboards = pgTable(
@@ -476,6 +505,7 @@ export type EventLogo = typeof eventLogos.$inferSelect;
 export type Speaker = typeof speakers.$inferSelect;
 export type Scene = typeof scenes.$inferSelect;
 export type SceneQueueItem = typeof sceneQueue.$inferSelect;
+export type Fixture = typeof fixtures.$inferSelect;
 export type Scoreboard = typeof scoreboards.$inferSelect;
 export type Team = typeof teams.$inferSelect;
 export type Quiz = typeof quizzes.$inferSelect;

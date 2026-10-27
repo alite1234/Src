@@ -20,6 +20,7 @@ export type SceneType =
   | "quiz_question"
   | "answer_reveal"
   | "scoreboard"
+  | "fixtures"
   | "break"
   | "closing";
 
@@ -32,6 +33,7 @@ export type VisibilityKey =
   | "announcement"
   | "quiz"
   | "scoreboard"
+  | "fixtures"
   | "countdown"
   | "break"
   | "closing";
@@ -91,6 +93,7 @@ export type ScoreboardDisplayMode =
   | "sequential"
   | "full"
   | "podium"
+  | "versus"
   | "score_only";
 
 export type ThemeId = "navy-gold" | "midnight" | "oxblood" | "emerald";
@@ -148,6 +151,18 @@ export type PublicSpeaker = {
   durationSeconds: number;
 };
 
+export type PublicFixture = {
+  id: string;
+  stage: string;
+  teamA: string;
+  teamB: string;
+  scoreA: number | null;
+  scoreB: number | null;
+  scheduledAt: string | null;
+  venue: string | null;
+  status: "scheduled" | "live" | "completed";
+};
+
 export type PublicScene = {
   id: string;
   type: SceneType;
@@ -156,7 +171,10 @@ export type PublicScene = {
   animation: AnimationPreset;
   durationSeconds: number | null;
   logoVisibility: SceneLogoOverride | null;
+  backgroundFileId: string | null;
+  backgroundUrl: string | null;
   speaker: PublicSpeaker | null;
+  fixtures: PublicFixture[] | null;
 };
 
 export type PublicLiveState = {

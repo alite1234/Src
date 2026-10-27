@@ -4,6 +4,7 @@ import { AnimatePresence } from "framer-motion";
 
 import type {
   PublicEvent,
+  PublicFixture,
   PublicLogo,
   PublicScene,
   PublicScoreboard,
@@ -12,6 +13,7 @@ import type {
 import { logosVisibleFor } from "@/lib/logo-visibility";
 import {
   formatEventDate,
+  formatFixtureKickoff,
   initials,
 } from "@/lib/utils";
 import { Stage } from "./stage";
@@ -75,6 +77,21 @@ function SpeakerBackdrop({ speaker }: { speaker: PublicSpeaker | null }) {
         backgroundPosition: "center",
       }}
     />
+  );
+}
+
+function SceneBackdrop({ scene }: { scene: PublicScene }) {
+  if (!scene.backgroundUrl) return null;
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={scene.backgroundUrl}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(2,6,18,0.55)_0%,rgba(2,6,18,0.88)_100%)]" />
+    </div>
   );
 }
 
@@ -255,6 +272,17 @@ function CitationScene({
     event.description ||
     "Citation text will appear here.";
 
+  // Scale the type size to the citation length so long citations still fit.
+  const citationLength = citation.length;
+  const citationSize =
+    citationLength > 1400
+      ? "1.02cqw"
+      : citationLength > 1000
+        ? "1.16cqw"
+        : citationLength > 650
+          ? "1.3cqw"
+          : "1.46cqw";
+
   return (
     <div className="relative flex h-full items-center gap-[4cqw]">
       <SpeakerBackdrop speaker={speaker} />
@@ -292,8 +320,11 @@ function CitationScene({
           </span>
           <Eyebrow>Citation</Eyebrow>
         </div>
-        <div className="mt-[1.2cqh] max-h-[56cqh] overflow-hidden pr-[1cqw]">
-          <p className="whitespace-pre-line text-[1.38cqw] leading-[1.72] text-[var(--stage-text)]/92">
+        <div className="mt-[1.2cqh] max-h-[68cqh] overflow-y-auto pr-[1cqw]">
+          <p
+            className="whitespace-pre-line leading-[1.72] text-[var(--stage-text)]/92"
+            style={{ fontSize: `clamp(14px, ${citationSize}, 30px)` }}
+          >
             {citation}
           </p>
         </div>
@@ -337,7 +368,7 @@ function TopicScene({
 function AnnouncementScene({ scene }: { scene: PublicScene }) {
   return (
     <div className="flex h-full flex-col items-center justify-center text-center">
-      <Eyebrow>{scene.title ? "Announcement" : "Notice"}</Eyebrow>
+      <Eyebrow>Announcement</Eyebrow>
       <h1 className="mt-[2.2cqh] max-w-[82cqw] text-balance font-display text-[5.2cqw] leading-[1.06]">
         {scene.content.heading || scene.title}
       </h1>
@@ -367,7 +398,7 @@ function BreakScene({
     <div className="flex h-full flex-col items-center justify-center text-center">
       <Eyebrow>Intermission</Eyebrow>
       <h1 className="mt-[2.2cqh] font-display text-[7cqw] leading-none">
-        Short Break
+        {scene.content.heading || "Short Break"}
       </h1>
       <GoldRule className="mt-[3cqh] w-[22cqw]" />
       <p className="mt-[2.6cqh] max-w-[58cqw] text-balance text-[1.5cqw] leading-relaxed text-[var(--stage-muted)]">
@@ -428,6 +459,152 @@ function QuizIntroScene({ scene }: { scene: PublicScene }) {
         <span className="text-[1.1cqw] uppercase tracking-[0.3em] text-[var(--stage-accent-2)]">
           Waiting for the host to launch
         </span>
+      </div>
+    </div>
+  );
+}
+
+function CountdownScene({
+  scene,
+  event,
+}: {
+  scene: PublicScene;
+  event: PublicEvent;
+}) {
+  return (
+    <div className="flex h-full flex-col items-center justify-center text-center">
+      <Eyebrow>{scene.content.heading || event.title}</Eyebrow>
+      <h1 className="mt-[2.2cqh] max-w-[80cqw] text-balance font-display text-[6cqw] leading-[1.04]">
+        {scene.content.subheading || "Session begins in"}
+      </h1>
+      <GoldRule className="mt-[2.8cqh] w-[22cqw]" />
+      {scene.content.body ? (
+        <p className="mt-[2.6cqh] max-w-[62cqw] whitespace-pre-line text-balance text-[1.55cqw] leading-[1.7] text-[var(--stage-muted)]">
+          {scene.content.body}
+        </p>
+      ) : null}
+      <div className="mt-[3.4cqh] flex items-center gap-[1.2cqw] rounded-full border border-[var(--stage-accent)]/30 bg-[var(--stage-accent)]/5 px-[2.4cqw] py-[1.3cqh]">
+        <span className="h-[0.8cqh] w-[0.8cqh] animate-pulse rounded-full bg-[var(--stage-accent)]" />
+        <span className="text-[1.1cqw] uppercase tracking-[0.3em] text-[var(--stage-accent-2)]">
+          The host will start the countdown shortly
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function FixtureCard({ fixture }: { fixture: PublicFixture }) {
+  const completed = fixture.status === "completed";
+  const live = fixture.status === "live";
+  const hasScore = fixture.scoreA !== null && fixture.scoreB !== null;
+
+  return (
+    <div
+      className={`rounded-xl border px-[1.6cqw] py-[1.6cqh] ${
+        live
+          ? "border-[var(--stage-accent)]/60 bg-[var(--stage-accent)]/10"
+          : "border-white/10 bg-white/[0.04]"
+      }`}
+    >
+      <div className="flex items-center justify-between gap-[1cqw]">
+        <p className="truncate text-[0.95cqw] uppercase tracking-[0.24em] text-[var(--stage-accent)]">
+          {fixture.stage}
+        </p>
+        {live ? (
+          <span className="flex items-center gap-[0.5cqw] text-[0.85cqw] uppercase tracking-[0.2em] text-[var(--stage-accent-2)]">
+            <span className="h-[0.7cqh] w-[0.7cqh] animate-pulse rounded-full bg-[var(--stage-accent)]" />
+            Live
+          </span>
+        ) : completed ? (
+          <span className="text-[0.85cqw] uppercase tracking-[0.2em] text-[var(--stage-muted)]">
+            Full time
+          </span>
+        ) : (
+          <span className="text-[0.85cqw] uppercase tracking-[0.2em] text-[var(--stage-muted)]">
+            {formatFixtureKickoff(fixture.scheduledAt) ?? "Upcoming"}
+          </span>
+        )}
+      </div>
+      <div className="mt-[1.2cqh] flex items-center justify-between gap-[1.2cqw]">
+        <p className="min-w-0 flex-1 truncate text-right text-[1.7cqw] font-semibold tracking-wide">
+          {fixture.teamA}
+        </p>
+        {hasScore ? (
+          <p className="shrink-0 font-display text-[2.2cqw] text-[var(--stage-accent-2)]">
+            {fixture.scoreA}
+            <span className="mx-[0.6cqw] text-[var(--stage-muted)]">–</span>
+            {fixture.scoreB}
+          </p>
+        ) : (
+          <p className="shrink-0 font-display text-[1.5cqw] uppercase tracking-[0.3em] text-[var(--stage-accent)]">
+            vs
+          </p>
+        )}
+        <p className="min-w-0 flex-1 truncate text-[1.7cqw] font-semibold tracking-wide">
+          {fixture.teamB}
+        </p>
+      </div>
+      {fixture.venue ? (
+        <p className="mt-[0.8cqh] truncate text-center text-[0.9cqw] uppercase tracking-[0.2em] text-[var(--stage-muted)]">
+          {fixture.venue}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function FixturesScene({ scene }: { scene: PublicScene }) {
+  const fixtures = scene.fixtures ?? [];
+  const stages = Array.from(new Set(fixtures.map((item) => item.stage)));
+
+  return (
+    <div className="flex h-full flex-col">
+      <div className="shrink-0 text-center">
+        <p className="text-[1.15cqw] font-semibold uppercase tracking-[0.42em] text-[var(--stage-accent)]">
+          Fixtures & Table Draw
+        </p>
+        <h2 className="mt-[1.2cqh] font-display text-[4.2cqw] leading-none">
+          {scene.content.heading || scene.title}
+        </h2>
+        {scene.content.subheading ? (
+          <p className="mt-[1cqh] text-[1.35cqw] text-[var(--stage-muted)]">
+            {scene.content.subheading}
+          </p>
+        ) : null}
+        <div className="gold-rule mx-auto mt-[1.6cqh] w-[26cqw]" />
+      </div>
+
+      <div className="mt-[2.2cqh] min-h-0 flex-1 overflow-y-auto">
+        {fixtures.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <p className="font-display text-[2.4cqw] text-[var(--stage-muted)]">
+              The draw will appear here.
+            </p>
+          </div>
+        ) : stages.length <= 1 ? (
+          <div className="mx-auto grid max-w-[80cqw] grid-cols-1 gap-[1.2cqh] sm:grid-cols-2">
+            {fixtures.map((fixture) => (
+              <FixtureCard key={fixture.id} fixture={fixture} />
+            ))}
+          </div>
+        ) : (
+          <div className="mx-auto flex max-w-[86cqw] flex-col gap-[2cqh]">
+            {stages.map((stage) => (
+              <div key={stage}>
+                <p className="mb-[0.8cqh] text-center text-[1cqw] uppercase tracking-[0.3em] text-[var(--stage-accent-2)]">
+                  {stage}
+                </p>
+                <div className="grid grid-cols-1 gap-[1cqh] sm:grid-cols-2">
+                  {fixtures
+                    .filter((fixture) => fixture.stage === stage)
+                    .map((fixture) => (
+                      <FixtureCard key={fixture.id} fixture={fixture} />
+                    ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -512,6 +689,12 @@ export function SceneView({
     case "quiz_intro":
       content = <QuizIntroScene scene={scene} />;
       break;
+    case "countdown":
+      content = <CountdownScene scene={scene} event={event} />;
+      break;
+    case "fixtures":
+      content = <FixturesScene scene={scene} />;
+      break;
     case "scoreboard":
       content = scoreboard ? (
         <LeaderboardView scoreboard={scoreboard} />
@@ -531,6 +714,7 @@ export function SceneView({
       className={className}
     >
       <div className="relative h-full">
+        <SceneBackdrop scene={scene} />
         <AnimatePresence mode="wait" initial={false}>
           <SceneMotion
             key={`${scene.id}:${scene.animation}`}

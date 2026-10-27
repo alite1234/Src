@@ -24,7 +24,7 @@ import { AUDIT_ACTIONS } from "@/lib/constants";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const LOGO_KINDS = new Set(["logo", "speaker_photo", "speaker_background"]);
+const LOGO_KINDS = new Set(["logo", "speaker_photo", "speaker_background", "scene_background"]);
 
 class UploadError extends Error {
   status: number;
@@ -101,7 +101,11 @@ export async function POST(request: Request) {
     const baseName =
       rawName ||
       fileEntry.name.replace(/\.[^.]+$/, "").trim() ||
-      (kind === "logo" ? "Summit logo" : "Speaker image");
+      (kind === "logo"
+        ? "Summit logo"
+        : kind === "scene_background"
+          ? "Scene background"
+          : "Speaker image");
     const name = baseName.slice(0, 80);
 
     if (kind === "logo") {
