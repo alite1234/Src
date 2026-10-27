@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Info } from "lucide-react";
+import { Info, HelpCircle } from "lucide-react";
 
 import { ImageUploadField } from "@/components/forms/image-upload-field";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
@@ -16,7 +16,7 @@ type SceneTypeConfig = {
   usesSpeaker: boolean;
   speakerRequired: boolean;
   note?: string;
-  hasImageTopicFields?: boolean;
+  hasImageFields?: boolean;
 };
 
 const SCENE_TYPE_CONFIG: Record<SceneType, SceneTypeConfig> = {
@@ -107,7 +107,7 @@ const SCENE_TYPE_CONFIG: Record<SceneType, SceneTypeConfig> = {
     contentFields: ["heading"],
     usesSpeaker: false,
     speakerRequired: false,
-    hasImageTopicFields: true,
+    hasImageFields: true,
     note: "Use this for debate scenes with a background image. Enter speaker name, topic, and side (For/Against).",
   },
 };
@@ -147,83 +147,103 @@ export function SceneFields({
     [],
   );
 
-  const imageOverrides = scene?.imageOverrides ?? {
-    speakerName: null,
-    topic: null,
-    stance: null,
-  };
-
   return (
     <>
       {scene ? <input type="hidden" name="sceneId" value={scene.id} /> : null}
+      
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Scene type" hint="The form adapts to the type you pick.">
-          <Select
-            name="type"
-            defaultValue={type}
-            onChange={(event) => setType(event.target.value as SceneType)}
-          >
-            {creatableTypes.map((item) => (
-              <option key={item.value} value={item.value}>
-                {item.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <div>
+          <Field label="Scene type">
+            <small className="mb-1 block text-xs uppercase tracking-[0.2em] text-mist-500">
+              The form adapts to the type you pick
+            </small>
+            <Select
+              name="type"
+              defaultValue={type}
+              onChange={(event) => setType(event.target.value as SceneType)}
+            >
+              {creatableTypes.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
         <Field label="Scene title">
           <Input
             name="title"
             required
             defaultValue={scene?.title ?? ""}
-            placeholder="Opening welcome"
+            placeholder="Scene title"
           />
         </Field>
       </div>
 
       {config.usesSpeaker ? (
-        <Field
-          label="Speaker"
-          hint={
-            config.speakerRequired
-              ? "Required for this scene type."
-              : "Optional for this scene type."
-          }
-        >
-          <Select name="speakerId" defaultValue={scene?.speaker?.id ?? ""}>
-            <option value="">No speaker</option>
-            {speakers.map((speaker) => (
-              <option key={speaker.id} value={speaker.id}>
-                {speaker.fullName}
-              </option>
-            ))}
-          </Select>
-        </Field>
+        <div>
+          <Field
+            label="Speaker"
+            hint={
+              config.speakerRequired
+                ? "Required for this scene type."
+                : "Optional for this scene type."
+            }
+          >
+            <Select name="speakerId" defaultValue={scene?.speaker?.id ?? ""}>
+              <option value="">No speaker selected</option>
+              {speakers.map((speaker) => (
+                <option key={speaker.id} value={speaker.id}>
+                  {speaker.fullName}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        </div>
       ) : null}
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Animation">
-          <Select name="animation" defaultValue={scene?.animation ?? "fade"}>
-            {ANIMATION_PRESETS.map((preset) => (
-              <option key={preset.value} value={preset.value}>
-                {preset.label}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field
-          label="Display duration (seconds)"
-          hint="Optional. The controller can auto-advance after it."
-        >
-          <Input
-            type="number"
-            name="durationSeconds"
-            min={5}
-            max={3600}
-            defaultValue={scene?.durationSeconds ?? ""}
-            placeholder="No timer"
-          />
-        </Field>
-      </div>
+      {config.hasImageFields ? (
+        <div className="border-l-2 border-gold-500/30 pl-4">
+          <p className="mb-3 flex items-start gap-2 text-xs leading-relaxed text-mist-400">
+            <HelpCircle className="mt-0.5 h-3 w-3 shrink-0 text-gold-400" />
+            For image-based debate scenes, enter the speaker name (who is arguing), the topic (debate subject), and the side they're arguing.
+          </p>
+          
+          <div className="space-y-4">
+            <Field label="Speaker name (optional)">
+              <Input
+                name="speakerName"
+                defaultValue={scene?.imageOverrides?.speakerName ?? ""}
+                placeholder="Name shown on screen"
+              />
+            </Field>
+            
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Topic">
+                <Input
+                  name="topic"
+                  defaultValue={scene?.imageOverrides?.topic ?? ""}
+                  placeholder="Debate topic"
+                />
+              </Field>
+              
+              <Field label="Side/Stance">
+                <Select
+                  name="stance"
+                  defaultValue={scene?.imageOverrides?.stance ?? ""}
+                >
+                  <option value="">Select side</option>
+                  {STANCE_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <ImageUploadField
         name="backgroundFileId"
@@ -236,99 +256,40 @@ export function SceneFields({
         aspect="wide"
       />
 
-      <Field label="Logos on this scene">
-        <Select
-          name="logoMode"
-          defaultValue={scene?.logoVisibility?.mode ?? "inherit"}
-        >
-          <option value="inherit">Inherit event settings</option>
-          <option value="show">Always show</option>
-          <option value="hide">Always hide</option>
-        </Select>
-      </Field>
-
       {config.contentFields.length > 0 ? (
         <div className="space-y-4">
-          {config.contentFields.includes("heading") &&
-          config.contentFields.includes("subheading") ? (
-            <div className="grid gap-4 sm:grid-cols-2">
-              <Field label={FIELD_LABELS.heading}>
-                <Input
-                  name="heading"
-                  defaultValue={scene?.content.heading ?? ""}
-                  placeholder={FIELD_PLACEHOLDERS.heading}
+          {config.contentFields.map((field) => (
+            <Field key={field} label={FIELD_LABELS[field]}>
+              {field === "body" ? (
+                <Textarea
+                  name={field}
+                  defaultValue={scene?.content[field] ?? ""}
+                  placeholder={FIELD_PLACEHOLDERS[field]}
+                  className="min-h-28"
                 />
-              </Field>
-              <Field label={FIELD_LABELS.subheading}>
+              ) : field === "heading" && config.hasImageFields ? (
                 <Input
-                  name="subheading"
-                  defaultValue={scene?.content.subheading ?? ""}
-                  placeholder={FIELD_PLACEHOLDERS.subheading}
+                  name={field}
+                  defaultValue={scene?.content[field] ?? scene?.title ?? ""}
+                  placeholder={FIELD_PLACEHOLDERS[field]}
                 />
-              </Field>
-            </div>
-          ) : (
-            config.contentFields.map((field) => (
-              <Field key={field} label={FIELD_LABELS[field]}>
-                {field === "body" ? (
-                  <Textarea
-                    name="body"
-                    defaultValue={scene?.content.body ?? ""}
-                    placeholder={FIELD_PLACEHOLDERS.body}
-                    className="min-h-28"
-                  />
-                ) : (
-                  <Input
-                    name={field}
-                    defaultValue={scene?.content[field] ?? ""}
-                    placeholder={FIELD_PLACEHOLDERS[field]}
-                  />
-                )}
-              </Field>
-            ))
-          )}
-        </div>
-      ) : null}
-
-      {config.hasImageTopicFields ? (
-        <div className="space-y-4">
-          <Field label="Speaker name (optional)">
-            <Input
-              name="speakerName"
-              defaultValue={imageOverrides.speakerName ?? ""}
-              placeholder="Name shown alongside the image"
-            />
-          </Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Topic">
-              <Input
-                name="topic"
-                defaultValue={imageOverrides.topic ?? ""}
-                placeholder="Debate or session topic"
-              />
+              ) : (
+                <Input
+                  name={field}
+                  defaultValue={scene?.content[field] ?? ""}
+                  placeholder={FIELD_PLACEHOLDERS[field]}
+                />
+              )}
             </Field>
-            <Field label="Side/Stance">
-              <Select
-                name="stance"
-                defaultValue={imageOverrides.stance ?? ""}
-              >
-                <option value="">Select side</option>
-                {STANCE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
+          ))}
         </div>
       ) : null}
 
       {config.note ? (
-        <p className="flex items-start gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-mist-400">
+        <div className="flex items-start gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-mist-400">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold-500/70" />
           {config.note}
-        </p>
+        </div>
       ) : null}
     </>
   );
