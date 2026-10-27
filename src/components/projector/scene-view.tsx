@@ -553,6 +553,61 @@ function FixtureCard({ fixture }: { fixture: PublicFixture }) {
   );
 }
 
+function ImageTopicScene({
+  scene,
+  event,
+}: {
+  scene: PublicScene;
+  event: PublicEvent;
+}) {
+  const overrides = scene.imageOverrides;
+  const speakerName = overrides?.speakerName ?? scene.speaker?.fullName;
+  const topic = overrides?.topic ?? scene.content.heading ?? scene.title;
+  const stance = overrides?.stance;
+
+  return (
+    <div className="relative flex h-full items-center">
+      <div className="pointer-events-none absolute inset-0">
+        {scene.backgroundUrl ? (
+          <img
+            src={scene.backgroundUrl}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-[var(--stage-surface)]">
+            <span className="font-display text-[5cqw] text-[var(--stage-accent)]/60">
+              Image background
+            </span>
+          </div>
+        )}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.65)_0%,rgba(0,0,0,0.85)_100%)]" />
+      </div>
+
+      <div className="relative z-10 flex flex-col items-center justify-center gap-[2cqw] px-[4cqw]">
+        <div className="flex flex-col items-center">
+          <p className="text-[1.1cqw] uppercase tracking-[0.32em] text-[var(--stage-accent)]/80">
+            {stance ? (stance === "for" ? "FOR" : "AGAINST") : "Topic"}
+          </p>
+          <h1 className="mt-[0.8cqh] text-balance font-display text-[5cqw] leading-none text-white">
+            {topic}
+          </h1>
+          {speakerName ? (
+            <p className="mt-[0.6cqh] text-[2cqw] font-medium text-[var(--stage-text)]/90">
+              {speakerName}
+            </p>
+          ) : null}
+        </div>
+        {stance ? (
+          <div className="rounded-full border-2 px-[2cqw] py-[0.4cqh] text-[1.2cqw] font-semibold uppercase tracking-[0.2em] text-[var(--stage-accent)]">
+            {stance === "for" ? "FOR" : "AGAINST"}
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
 function FixturesScene({ scene }: { scene: PublicScene }) {
   const fixtures = scene.fixtures ?? [];
   const stages = Array.from(new Set(fixtures.map((item) => item.stage)));
@@ -694,6 +749,9 @@ export function SceneView({
       break;
     case "fixtures":
       content = <FixturesScene scene={scene} />;
+      break;
+    case "image_topic":
+      content = <ImageTopicScene scene={scene} event={event} />;
       break;
     case "scoreboard":
       content = scoreboard ? (

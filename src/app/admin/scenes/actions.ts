@@ -7,7 +7,7 @@ import { adminContext, revalidateSummit } from "@/lib/admin-context";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTIONS, SCENE_TYPES } from "@/lib/constants";
 import { db } from "@/lib/db";
-import { sceneQueue, scenes, speakers } from "@/lib/db/schema";
+import { sceneQueue, scenes, speakers, imageSceneOverrides } from "@/lib/db/schema";
 import { getLiveState } from "@/lib/data/live";
 import { publishEventUpdate } from "@/lib/realtime/server";
 import { updateLiveState } from "@/lib/live-control";
@@ -73,6 +73,7 @@ const sceneSchema = z.object({
   body: z.string().trim().max(5000).optional(),
   footer: z.string().trim().max(240).optional(),
   logoMode: z.enum(["inherit", "show", "hide"]),
+  speakerName: z.string().trim().max(100).optional(),
 });
 
 function formDataToScene(formData: FormData) {
@@ -88,6 +89,7 @@ function formDataToScene(formData: FormData) {
     body: String(formData.get("body") ?? ""),
     footer: String(formData.get("footer") ?? ""),
     logoMode: String(formData.get("logoMode") ?? "inherit"),
+    speakerName: String(formData.get("speakerName") ?? ""),
   };
 }
 
@@ -224,6 +226,15 @@ export async function createSceneAction(
       sceneId: scene.id,
       position,
     });
+
+    if (parsed.data.type === "image_topic" && parsed.data.speakerName) {
+      await tx.insert(imageSceneOverrides).values({
+        sceneId: scene.id,
+        speakerName: parsed.data.speakerName || null,
+        topic: parsed.data.heading || null,
+        stance: null,
+      });
+    }
 
     return [scene];
   });

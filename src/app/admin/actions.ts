@@ -7,7 +7,8 @@ import { z } from "zod";
 
 import { db } from "@/lib/db";
 import { eventLogos, events, liveState, users } from "@/lib/db/schema";
-import { getActiveEvent } from "@/lib/data/events";
+import { generateEventCode, getActiveEvent } from "@/lib/data/events";
+import { getApiUser } from "@/lib/auth/guards";
 import { getApiUser } from "@/lib/auth/guards";
 import { revalidateSummit, adminContext } from "@/lib/admin-context";
 import { logAudit } from "@/lib/audit";
@@ -46,6 +47,7 @@ const eventSchema = z.object({
   description: z.string().trim().max(4000).optional(),
   openingMessage: z.string().trim().max(2000).optional(),
   closingMessage: z.string().trim().max(2000).optional(),
+  eventCode: z.string().trim().length(6, "Event code must be 6 characters.").optional(),
   theme: z.enum(themeValues),
   animationStyle: z.enum(animationValues),
   logoLayout: z.enum(logoLayoutValues),
@@ -66,6 +68,7 @@ function eventFormData(formData: FormData) {
     description: String(formData.get("description") ?? ""),
     openingMessage: String(formData.get("openingMessage") ?? ""),
     closingMessage: String(formData.get("closingMessage") ?? ""),
+    eventCode: String(formData.get("eventCode") ?? "") || null,
     theme: String(formData.get("theme") ?? "navy-gold"),
     animationStyle: String(formData.get("animationStyle") ?? "fade"),
     logoLayout: String(formData.get("logoLayout") ?? "primary"),
@@ -98,6 +101,8 @@ export async function createEventAction(
     .from(events)
     .limit(1);
 
+  const eventCode = parsed.data.eventCode || generateEventCode();
+
   const [created] = await db
     .insert(events)
     .values({
@@ -108,6 +113,7 @@ export async function createEventAction(
       description: textOrNull(parsed.data.description),
       openingMessage: textOrNull(parsed.data.openingMessage),
       closingMessage: textOrNull(parsed.data.closingMessage),
+      eventCode,
       theme: parsed.data.theme,
       animationStyle: parsed.data.animationStyle,
       logoLayout: parsed.data.logoLayout,
@@ -125,7 +131,7 @@ export async function createEventAction(
     eventId: created.id,
     userId: user.id,
     action: AUDIT_ACTIONS.eventCreated,
-    details: { title: created.title },
+    details: { title: created.title, eventCode },
   });
 
   revalidateSummit();

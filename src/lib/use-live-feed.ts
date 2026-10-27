@@ -69,7 +69,7 @@ export function useLiveFeed<T extends FeedData>({
     const loop = async () => {
       await refresh();
       if (cancelled) return;
-      const delay = ablyConnectedRef.current ? 15_000 : pollMs;
+      const delay = ablyConnectedRef.current ? 15_000 : Math.min(pollMs, 500);
       timer = setTimeout(loop, delay);
     };
 

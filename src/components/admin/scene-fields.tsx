@@ -16,6 +16,7 @@ type SceneTypeConfig = {
   usesSpeaker: boolean;
   speakerRequired: boolean;
   note?: string;
+  hasImageTopicFields?: boolean;
 };
 
 const SCENE_TYPE_CONFIG: Record<SceneType, SceneTypeConfig> = {
@@ -102,6 +103,13 @@ const SCENE_TYPE_CONFIG: Record<SceneType, SceneTypeConfig> = {
     usesSpeaker: false,
     speakerRequired: false,
   },
+  image_topic: {
+    contentFields: ["heading"],
+    usesSpeaker: false,
+    speakerRequired: false,
+    hasImageTopicFields: true,
+    note: "Use this for debate scenes with a background image. Enter speaker name, topic, and side (For/Against).",
+  },
 };
 
 const FIELD_LABELS: Record<ContentField, string> = {
@@ -112,11 +120,16 @@ const FIELD_LABELS: Record<ContentField, string> = {
 };
 
 const FIELD_PLACEHOLDERS: Record<ContentField, string> = {
-  heading: "Defaults to the scene title",
+  heading: "Scene title appears here",
   subheading: "Optional supporting line",
   body: "Main message for this scene.",
   footer: "Optional small label",
 };
+
+const STANCE_OPTIONS = [
+  { value: "for", label: "For" },
+  { value: "against", label: "Against" },
+];
 
 export function SceneFields({
   eventId,
@@ -128,11 +141,17 @@ export function SceneFields({
   speakers: Speaker[];
 }) {
   const [type, setType] = useState<SceneType>(scene?.type ?? "welcome");
-  const config = SCENE_TYPE_CONFIG[type];
+  const config = SCENE_TYPE_CONFIG[type] ?? SCENE_TYPE_CONFIG.welcome;
   const creatableTypes = useMemo(
     () => SCENE_TYPES.filter((item) => item.creatable),
     [],
   );
+
+  const imageOverrides = scene?.imageOverrides ?? {
+    speakerName: null,
+    topic: null,
+    stance: null,
+  };
 
   return (
     <>
@@ -268,6 +287,40 @@ export function SceneFields({
               </Field>
             ))
           )}
+        </div>
+      ) : null}
+
+      {config.hasImageTopicFields ? (
+        <div className="space-y-4">
+          <Field label="Speaker name (optional)">
+            <Input
+              name="speakerName"
+              defaultValue={imageOverrides.speakerName ?? ""}
+              placeholder="Name shown alongside the image"
+            />
+          </Field>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label="Topic">
+              <Input
+                name="topic"
+                defaultValue={imageOverrides.topic ?? ""}
+                placeholder="Debate or session topic"
+              />
+            </Field>
+            <Field label="Side/Stance">
+              <Select
+                name="stance"
+                defaultValue={imageOverrides.stance ?? ""}
+              >
+                <option value="">Select side</option>
+                {STANCE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
         </div>
       ) : null}
 

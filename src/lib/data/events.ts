@@ -1,4 +1,4 @@
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, sql } from "drizzle-orm";
 
 import { db } from "@/lib/db";
 import {
@@ -6,6 +6,7 @@ import {
   events,
   files,
   fixtures,
+  imageSceneOverrides,
   questions,
   quizzes,
   sceneQueue,
@@ -51,6 +52,24 @@ export async function getEventById(eventId: string): Promise<Event | null> {
   return event ?? null;
 }
 
+export async function getEventByCode(eventCode: string): Promise<Event | null> {
+  const [event] = await db
+    .select()
+    .from(events)
+    .where(eq(events.eventCode, eventCode))
+    .limit(1);
+  return event ?? null;
+}
+
+export function generateEventCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 export async function getAllEvents() {
   return db
     .select()
@@ -68,6 +87,7 @@ export function toPublicEvent(event: Event): PublicEvent {
     description: event.description,
     openingMessage: event.openingMessage,
     closingMessage: event.closingMessage,
+    eventCode: event.eventCode,
     theme: isThemeId(event.theme) ? event.theme : "navy-gold",
     animationStyle: event.animationStyle,
     logoLayout: event.logoLayout,
@@ -256,13 +276,32 @@ export async function getEventScenes(eventId: string) {
   const needsFixtures = rows.some((row) => row.scene.type === "fixtures");
   const fixtureRows = needsFixtures ? await getEventFixtures(eventId) : [];
 
-  return rows.map((row) =>
-    toPublicScene(row.scene, row.speaker, {
+  const imageOverridesMap = new Map<string, { speakerName: string | null; topic: string | null; stance: string | null }>();
+  const imageOverrideRows = await db
+    .select()
+    .from(imageSceneOverrides)
+    .where(
+      sql`scene_id = ANY(${rows.map(r => r.scene.id)})`,
+    )
+    .execute();
+  
+  for (const override of imageOverrideRows) {
+    imageOverridesMap.set(override.sceneId, {
+      speakerName: override.speakerName,
+      topic: override.topic,
+      stance: override.stance,
+    });
+  }
+
+  return rows.map((row) => {
+    const overrides = imageOverridesMap.get(row.scene.id) ?? null;
+    return toPublicScene(row.scene, row.speaker, {
       backgroundFileId: row.scene.backgroundFileId,
       backgroundUrl: row.backgroundId ? publicFileUrl(row.backgroundId) : null,
       fixtures: fixtureRows,
-    }),
-  );
+      imageOverrides: overrides,
+    });
+  });
 }
 
 export async function getEventQueue(eventId: string) {

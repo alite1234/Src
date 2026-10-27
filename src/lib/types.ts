@@ -22,7 +22,8 @@ export type SceneType =
   | "scoreboard"
   | "fixtures"
   | "break"
-  | "closing";
+  | "closing"
+  | "image_topic";
 
 export type VisibilityKey =
   | "opening"
@@ -36,7 +37,8 @@ export type VisibilityKey =
   | "fixtures"
   | "countdown"
   | "break"
-  | "closing";
+  | "closing"
+  | "image_topic";
 
 export type LogoVisibility = {
   default: boolean;
@@ -52,6 +54,8 @@ export type SceneContent = {
   subheading?: string;
   body?: string;
   footer?: string;
+  topic?: string;
+  stance?: string;
 };
 
 export type AnimationPreset =
@@ -131,6 +135,7 @@ export type PublicEvent = {
   description: string | null;
   openingMessage: string | null;
   closingMessage: string | null;
+  eventCode: string | null;
   theme: ThemeId;
   animationStyle: AnimationPreset;
   logoLayout: LogoLayout;
@@ -175,6 +180,11 @@ export type PublicScene = {
   backgroundUrl: string | null;
   speaker: PublicSpeaker | null;
   fixtures: PublicFixture[] | null;
+  imageOverrides?: {
+    speakerName: string | null;
+    topic: string | null;
+    stance: string | null;
+  } | null;
 };
 
 export type PublicLiveState = {
@@ -246,6 +256,7 @@ export type PublicQuizState = {
   lobbyOpen: boolean;
   lobbyEndsAt: string | null;
   participantCount: number;
+  joiningParticipants: string[];
   submissionCount: number;
   question: PublicQuizQuestion | null;
   optionStats: QuizOptionStat[] | null;

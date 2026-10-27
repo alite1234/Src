@@ -240,6 +240,13 @@ export async function buildPublicQuizState(
   const questionCount = orderedQuestionIds(session, bundle.questions).length;
   const reveal = revealIsVisible(session.status);
   const participantCount = await getParticipantCount(session.id);
+  const allParticipants = await db
+    .select({ name: participants.name })
+    .from(participants)
+    .where(eq(participants.sessionId, session.id))
+    .orderBy(desc(participants.joinedAt), asc(participants.name))
+    .limit(10);
+  const joiningParticipants = allParticipants.map(p => p.name);
 
   let stats: QuizOptionStat[] | null = null;
   let leaderboard: LeaderboardEntry[] | null = null;
@@ -276,6 +283,7 @@ export async function buildPublicQuizState(
     lobbyOpen: session.lobbyOpen,
     lobbyEndsAt: session.lobbyEndsAt?.toISOString() ?? null,
     participantCount,
+    joiningParticipants,
     submissionCount: session.submissionCount,
     question: publicQuestion,
     optionStats: stats,

@@ -57,6 +57,7 @@ export const events = pgTable("events", {
   description: text("description"),
   openingMessage: text("opening_message"),
   closingMessage: text("closing_message"),
+  eventCode: text("event_code").unique(),
   theme: text("theme").$type<ThemeId>().notNull().default("navy-gold"),
   animationStyle: text("animation_style")
     .$type<AnimationPreset>()
@@ -195,6 +196,23 @@ export const scenes = pgTable(
       .notNull(),
   },
   (table) => [index("scenes_event_idx").on(table.eventId)],
+);
+
+export const imageSceneOverrides = pgTable(
+  "image_scene_overrides",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sceneId: uuid("scene_id")
+      .notNull()
+      .references(() => scenes.id, { onDelete: "cascade" }),
+    speakerName: text("speaker_name"),
+    topic: text("topic"),
+    stance: text("stance"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [index("image_scene_overrides_scene_idx").on(table.sceneId)],
 );
 
 export const sceneQueue = pgTable(
@@ -504,6 +522,7 @@ export type FileRecord = typeof files.$inferSelect;
 export type EventLogo = typeof eventLogos.$inferSelect;
 export type Speaker = typeof speakers.$inferSelect;
 export type Scene = typeof scenes.$inferSelect;
+export type ImageSceneOverride = typeof imageSceneOverrides.$inferSelect;
 export type SceneQueueItem = typeof sceneQueue.$inferSelect;
 export type Fixture = typeof fixtures.$inferSelect;
 export type Scoreboard = typeof scoreboards.$inferSelect;

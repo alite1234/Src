@@ -106,6 +106,14 @@ function EventFields({ event }: { event?: Event }) {
         </Field>
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <Field label="Event code" hint="6-character code for controller and projector access.">
+          <Input
+            name="eventCode"
+            defaultValue={event?.eventCode ?? ""}
+            placeholder="ABC123"
+            maxLength={6}
+          />
+        </Field>
         <Field label="Theme">
           <Select name="theme" defaultValue={event?.theme ?? "navy-gold"}>
             {THEME_LIST.map((theme) => (

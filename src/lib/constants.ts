@@ -91,7 +91,7 @@ export const SCENE_TYPES: {
   {
     value: "fixtures",
     label: "Fixtures & Table Draw",
-    description: "Match draw, versus cards and group tables.",
+    description: "Match draw, scores and the table draw.",
     visibilityKey: "fixtures",
     creatable: true,
   },
@@ -122,6 +122,13 @@ export const SCENE_TYPES: {
     description: "Generated automatically by the live quiz.",
     visibilityKey: "quiz",
     creatable: false,
+  },
+  {
+    value: "image_topic",
+    label: "Image Debate",
+    description: "Background image with speaker, topic, and side (For/Against).",
+    visibilityKey: "announcement",
+    creatable: true,
   },
 ];
 
@@ -177,6 +184,7 @@ export const VISIBILITY_KEYS: { key: VisibilityKey; label: string }[] = [
   { key: "countdown", label: "Countdown screens" },
   { key: "break", label: "Break screens" },
   { key: "closing", label: "Closing screens" },
+  { key: "image_topic", label: "Image debate presentations" },
 ];
 
 export const DEFAULT_LOGO_VISIBILITY: LogoVisibility = {
