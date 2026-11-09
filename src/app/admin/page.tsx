@@ -12,6 +12,7 @@ import {
   Trophy,
   UsersRound,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 import {
   activateEventAction,
@@ -221,6 +222,8 @@ export default async function AdminOverviewPage({
 
   const completed = checklist.filter((item) => item.done).length;
 
+  const MotionLink = motion(Link);
+
   return (
     <div>
       <PageHeader
@@ -281,11 +284,15 @@ export default async function AdminOverviewPage({
             icon: Trophy,
             href: "/admin/quiz",
           },
-        ].map((stat) => (
-          <Link
+        ].map((stat, index) => (
+          <MotionLink
             key={stat.label}
             href={stat.href}
-            className="panel group rounded-2xl p-4 transition-colors hover:border-gold-500/30"
+            whileHover={{ y: -4 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.08 }}
+            className="panel group rounded-2xl p-4 transition-colors hover:border-gold-500/30 cursor-pointer"
           >
             <div className="flex items-center justify-between">
               <stat.icon className="h-4 w-4 text-gold-400/80" />
@@ -295,32 +302,39 @@ export default async function AdminOverviewPage({
             <p className="mt-1 text-[10px] uppercase tracking-[0.22em] text-mist-500">
               {stat.label}
             </p>
-          </Link>
+          </MotionLink>
         ))}
       </div>
 
       <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div className="space-y-5">
           {event ? (
-            <Card>
-              <CardHeader
-                title="Active summit"
-                description="These details feed the opening, welcome and closing screens."
-                actions={
-                  <Badge tone={event.isActive ? "success" : "neutral"}>
-                    {event.isActive ? "Active" : event.status}
-                  </Badge>
-                }
-              />
-              <CardBody>
-                <ActionForm
-                  action={updateEventAction}
-                  submitLabel="Save summit settings"
-                >
-                  <EventFields event={event} />
-                </ActionForm>
-              </CardBody>
-            </Card>
+            <motion.div
+              whileHover={{ y: -4 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="space-y-5"
+            >
+              <Card>
+                <CardHeader
+                  title="Active summit"
+                  description="These details feed the opening, welcome and closing screens."
+                  actions={
+                    <Badge tone={event.isActive ? "success" : "neutral"}>
+                      {event.isActive ? "Active" : event.status}
+                    </Badge>
+                  }
+                />
+                <CardBody>
+                  <ActionForm
+                    action={updateEventAction}
+                    submitLabel="Save summit settings"
+                  >
+                    <EventFields event={event} />
+                  </ActionForm>
+                </CardBody>
+              </Card>
+              </motion.div>
           ) : null}
 
           {events.length > 0 ? (
@@ -333,9 +347,13 @@ export default async function AdminOverviewPage({
                 }
               />
               <CardBody className="space-y-3">
-                {events.map((item) => (
-                  <div
+                {events.map((item, index) => (
+                  <motion.div
                     key={item.id}
+                    whileHover={{ x: 4 }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
                     className="flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-white/[0.02] px-4 py-3"
                   >
                     <div className="min-w-0 flex-1">
@@ -381,73 +399,97 @@ export default async function AdminOverviewPage({
                         </ConfirmSubmitButton>
                       </form>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
               </CardBody>
             </Card>
           ) : null}
 
-          <Card>
-            <CardHeader
-              title={events.length > 0 ? "Create another summit" : "Create your summit"}
-              description="Start with the event identity. You can refine branding and content afterwards."
-              actions={
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold-500/25 bg-gold-500/10 text-gold-300">
-                  <Plus className="h-4 w-4" />
-                </span>
-              }
-            />
-            <CardBody>
-              <ActionForm
-                action={createEventAction}
-                submitLabel="Create summit"
-                pendingLabel="Creating…"
-              >
-                <EventFields />
-              </ActionForm>
-            </CardBody>
-          </Card>
+          <motion.div
+            whileHover={{ y: -4 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <Card>
+              <CardHeader
+                title={events.length > 0 ? "Create another summit" : "Create your summit"}
+                description="Start with the event identity. You can refine branding and content afterwards."
+                actions={
+                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-gold-500/25 bg-gold-500/10 text-gold-300">
+                    <Plus className="h-4 w-4" />
+                  </span>
+                }
+              />
+              <CardBody>
+                <ActionForm
+                  action={createEventAction}
+                  submitLabel="Create summit"
+                  pendingLabel="Creating…"
+                >
+                  <EventFields />
+                </ActionForm>
+              </CardBody>
+            </Card>
+          </motion.div>
         </div>
 
         <div className="space-y-5">
-          <Card>
-            <CardHeader
-              title="Setup checklist"
-              description={`${completed} of ${checklist.length} complete`}
-            />
-            <CardBody className="space-y-2">
-              {checklist.map((item) => (
-                <Link
-                  key={item.label}
-                  href={item.href}
-                  className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-white/[0.04]"
-                >
-                  {item.done ? (
-                    <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
-                  ) : (
-                    <Circle className="h-4 w-4 shrink-0 text-mist-600" />
-                  )}
-                  <span
-                    className={
-                      item.done ? "text-mist-300" : "text-mist-400"
-                    }
+          <motion.div
+            whileHover={{ y: -4 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Card>
+              <CardHeader
+                title="Setup checklist"
+                description={`${completed} of ${checklist.length} complete`}
+              />
+              <CardBody className="space-y-2">
+                {checklist.map((item, index) => (
+                  <MotionLink
+                    key={item.label}
+                    href={item.href}
+                    whileHover={{ backgroundColor: "rgba(255,255,255,0.06)" }}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 + index * 0.05 }}
+                    className="flex items-center gap-3 rounded-lg px-2 py-2 text-sm transition-colors hover:bg-white/[0.04]"
                   >
-                    {item.label}
-                  </span>
-                </Link>
-              ))}
-            </CardBody>
-          </Card>
+                    {item.done ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-400" />
+                    ) : (
+                      <Circle className="h-4 w-4 shrink-0 text-mist-600" />
+                    )}
+                    <span
+                      className={
+                        item.done ? "text-mist-300" : "text-mist-400"
+                      }
+                    >
+                      {item.label}
+                    </span>
+                  </MotionLink>
+                ))}
+              </CardBody>
+            </Card>
+          </motion.div>
 
-          <Card>
-            <CardHeader
-              title="Run the show"
-              description="Private previews, then publish to the projector."
-            />
-            <CardBody className="space-y-2">
-              <Link
-                href="/control"
-                className={buttonStyles({
+          <motion.div
+            whileHover={{ y: -4 }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <Card>
+              <CardHeader
+                title="Run the show"
+                description="Private previews, then publish to the projector."
+              />
+              <CardBody className="space-y-2">
+                <Link
+                  href="/control"
+                  className={buttonStyles({
                   variant: "primary",
                   size: "md",
                   className: "w-full justify-between",
@@ -482,7 +524,8 @@ export default async function AdminOverviewPage({
               </Link>
             </CardBody>
           </Card>
-        </div>
+        </motion.div>
+      </div>
       </div>
     </div>
   );

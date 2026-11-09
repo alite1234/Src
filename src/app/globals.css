@@ -218,3 +218,30 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #2a4170;
 }
+
+/* Controller mobile landscape preference */
+.controller-landscape-hint {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #030917;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+@media (max-width: 768px) and (orientation: portrait) {
+  .controller-landscape-hint {
+    display: flex;
+  }
+}
+
+@media (max-width: 768px) and (orientation: landscape) {
+  .controller-landscape-hint {
+    display: none;
+  }
+}

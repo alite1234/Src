@@ -1,6 +1,6 @@
 "use server";
 
-import { asc, count, eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { adminContext, revalidateSummit } from "@/lib/admin-context";
@@ -52,14 +52,6 @@ export async function updateBrandingAction(
     logoDefault: formData.get("logoDefault") === "on",
   });
   if (!parsed.success) return { error: "Choose a valid logo layout." };
-
-  const [total] = await db
-    .select({ value: count(eventLogos.id) })
-    .from(eventLogos)
-    .where(eq(eventLogos.eventId, ctx.event.id));
-  if (Number(total?.value ?? 0) === 0) {
-    return { error: "Upload at least one logo before saving branding." };
-  }
 
   const scenes: Partial<Record<VisibilityKey, boolean>> = {};
   for (const { key } of VISIBILITY_KEYS) {

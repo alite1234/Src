@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { KeyRound, Radio } from "lucide-react";
+import { KeyRound, Radio, RotateCcw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/field";
@@ -28,6 +28,15 @@ export default async function ControlPage({ searchParams }: { searchParams: Prom
   if (!event) {
     return (
       <main className="relative flex min-h-dvh flex-col overflow-hidden bg-navy-950">
+        <div className="controller-landscape-hint">
+          <RotateCcw className="mx-auto h-10 w-10 animate-spin text-gold-500" />
+          <h2 className="font-display text-xl text-white">
+            Turn your phone sideways
+          </h2>
+          <p className="mt-2 text-sm text-mist-400">
+            Landscape mode gives the best controller view.
+          </p>
+        </div>
         <div className="pointer-events-none absolute inset-0">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,#0c2550_0%,#061127_48%,#030917_100%)]" />
         </div>
@@ -72,7 +81,16 @@ export default async function ControlPage({ searchParams }: { searchParams: Prom
 
   if (!event.isActive) {
     return (
-      <main className="flex h-dvh items-center justify-center bg-navy-950 text-center">
+      <main className="relative flex h-dvh items-center justify-center bg-navy-950 text-center">
+        <div className="controller-landscape-hint">
+          <RotateCcw className="mx-auto h-10 w-10 animate-spin text-gold-500" />
+          <h2 className="font-display text-xl text-white">
+            Turn your phone sideways
+          </h2>
+          <p className="mt-2 text-sm text-mist-400">
+            Landscape mode gives the best controller view.
+          </p>
+        </div>
         <div>
           <h1 className="font-display text-2xl text-white">
             Summit not active
