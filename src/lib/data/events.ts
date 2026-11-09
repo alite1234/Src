@@ -224,6 +224,11 @@ export function toPublicScene(
     backgroundFileId?: string | null;
     backgroundUrl?: string | null;
     fixtures?: PublicFixture[] | null;
+    imageOverrides?: {
+      speakerName: string | null;
+      topic: string | null;
+      stance: string | null;
+    } | null;
   } = {},
 ): PublicScene {
   return {
@@ -238,6 +243,7 @@ export function toPublicScene(
     backgroundUrl: extras.backgroundUrl ?? null,
     speaker: speaker ? toPublicSpeaker(speaker) : null,
     fixtures: scene.type === "fixtures" ? (extras.fixtures ?? []) : null,
+    imageOverrides: extras.imageOverrides ?? null,
   };
 }
 

@@ -9,7 +9,6 @@ import { db } from "@/lib/db";
 import { eventLogos, events, liveState, users } from "@/lib/db/schema";
 import { generateEventCode, getActiveEvent } from "@/lib/data/events";
 import { getApiUser } from "@/lib/auth/guards";
-import { getApiUser } from "@/lib/auth/guards";
 import { revalidateSummit, adminContext } from "@/lib/admin-context";
 import { logAudit } from "@/lib/audit";
 import { AUDIT_ACTIONS, THEME_LIST } from "@/lib/constants";

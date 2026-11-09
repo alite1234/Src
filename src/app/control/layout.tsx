@@ -29,9 +29,13 @@ export default async function ControlLayout({
   const user = await requireUser(["admin", "controller"]);
 
   const handleInstall = async () => {
-    if (typeof window !== "undefined" && (window as any).BeforeInstallEvent) {
-      const event = (window as any).BeforeInstallEvent;
-      await event.prompt();
+    if (typeof window !== "undefined") {
+      const maybeEvent = (window as unknown as {
+        beforeinstallprompt?: { prompt: () => Promise<void> };
+      }).beforeinstallprompt;
+      if (maybeEvent) {
+        await maybeEvent.prompt();
+      }
     }
   };
 

@@ -58,6 +58,24 @@ export type SceneContent = {
   stance?: string;
 };
 
+export type SceneTypeDefaults = {
+  title?: string;
+  heading?: string;
+  subheading?: string;
+  body?: string;
+  footer?: string;
+  animation?: AnimationPreset;
+  durationSeconds?: number;
+  logoMode?: "inherit" | "show" | "hide";
+  speakerName?: string;
+  topic?: string;
+  stance?: string;
+};
+
+export type SceneDefaultsMap = Partial<
+  Record<SceneType, SceneTypeDefaults>
+>;
+
 export type AnimationPreset =
   | "fade"
   | "slide"

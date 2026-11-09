@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { createSetupQuestionnaireAction } from "@/app/admin/setup/questionnaire-actions";
+import { updateSceneDefaultsAction } from "@/app/admin/setup/actions";
 import { AdminNotice, PageHeader } from "@/components/admin/page-header";
 import { ActionForm } from "@/components/forms/action-form";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +19,8 @@ import { buttonStyles } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { getActiveEvent } from "@/lib/data/events";
+import { ANIMATION_PRESETS, SCENE_TYPES } from "@/lib/constants";
+import type { SceneDefaultsMap, SceneTypeDefaults } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
 
@@ -94,7 +97,7 @@ export default async function SetupPage({
       
       {!event.isActive ? (
         <div className="mb-5 rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-4 py-3 text-sm text-amber-100">
-          The summit is not yet active. Mark it as "Ready" from the main dashboard first.
+          The summit is not yet active. Mark it as &quot;Ready&quot; from the main dashboard first.
         </div>
       ) : null}
       
@@ -102,7 +105,7 @@ export default async function SetupPage({
         <Card>
           <CardHeader
             title="Event details"
-            description="Your summit: {event.title}"
+            description={`Your summit: ${event.title}`}
           />
           <CardBody>
             <div className="space-y-3">
@@ -121,15 +124,17 @@ export default async function SetupPage({
         </Card>
         
         <Card>
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <HelpCircle className="h-5 w-5 text-gold-400" />
-              <h3 className="font-display text-lg">How should we set up your summit?</h3>
-            </div>
-          </CardHeader>
+          <CardHeader
+            title={
+              <div className="flex items-center gap-2">
+                <HelpCircle className="h-5 w-5 text-gold-400" />
+                <h3 className="font-display text-lg">How should we set up your summit?</h3>
+              </div>
+            }
+          />
           <CardBody>
             <p className="mb-4 text-sm text-mist-400">
-              Answer these questions and we'll create the right scenes for you.
+              Answer these questions and we&apos;ll create the right scenes for you.
             </p>
             
             <form className="space-y-4">
@@ -195,27 +200,132 @@ Jane Doe – Councilmember"
                     name="quizQuestion"
                     placeholder="If running a quiz, enter the main question"
                   />
-                </div>
+                </Field>
               </div>
-              
+
+              <Card className="mt-8">
+                <CardHeader
+                  title="Screen type defaults"
+                  description="Set the default content, timing, look and behavior for each screen type. When you create a scene of this type later, it starts with these settings instead of blank."
+                />
+                <CardBody className="space-y-6">
+                  <p className="text-xs text-mist-500">
+                    Leave a field blank to keep the default for that screen type.
+                  </p>
+                  {SCENE_TYPES.filter((item) => item.creatable).map((item) => {
+                    const typeDefaults =
+                      (event.sceneDefaults as
+                        | SceneDefaultsMap
+                        | undefined)?.[item.value] ?? {};
+                    return (
+                      <div
+                        key={item.value}
+                        className="rounded-xl border border-white/8 bg-white/[0.02] p-4"
+                      >
+                        <div className="mb-3 flex items-center gap-2">
+                          <Badge tone="gold">{item.label}</Badge>
+                          <span className="ml-auto text-[10px] uppercase tracking-[0.16em] text-mist-600">
+                            {item.description}
+                          </span>
+                        </div>
+                        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                          <Field label="Default title">
+                            <Input
+                              name={`defaults_${item.value}_title`}
+                              defaultValue={typeDefaults.title ?? ""}
+                              placeholder="Default scene title"
+                            />
+                          </Field>
+                          {item.value === "image_topic" ? (
+                            <Field label="Speaker name">
+                              <Input
+                                name={`defaults_${item.value}_speakerName`}
+                                defaultValue={
+                                  (typeDefaults as SceneTypeDefaults)
+                                    .speakerName ?? ""
+                                }
+                                placeholder="Name shown on screen"
+                              />
+                            </Field>
+                          ) : null}
+                          <Field label="Animation">
+                            <Select
+                              name={`defaults_${item.value}_animation`}
+                              defaultValue={typeDefaults.animation ?? ""}
+                            >
+                              <option value="">Inherit (fade)</option>
+                              {ANIMATION_PRESETS.map((preset) => (
+                                <option key={preset.value} value={preset.value}>
+                                  {preset.label}
+                                </option>
+                              ))}
+                            </Select>
+                          </Field>
+                          <Field label="Duration (seconds)">
+                            <Input
+                              type="number"
+                              name={`defaults_${item.value}_durationSeconds`}
+                              defaultValue={
+                                typeDefaults.durationSeconds ?? ""
+                              }
+                              min={5}
+                              max={3600}
+                              placeholder="e.g. 30"
+                            />
+                          </Field>
+                          <Field label="Logo visibility">
+                            <Select
+                              name={`defaults_${item.value}_logoMode`}
+                              defaultValue={typeDefaults.logoMode ?? "inherit"}
+                            >
+                              <option value="inherit">Inherit event setting</option>
+                              <option value="show">Always show</option>
+                              <option value="hide">Always hide</option>
+                            </Select>
+                          </Field>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </CardBody>
+              </Card>
+
               <ActionForm
                 action={createSetupQuestionnaireAction}
                 submitLabel="Create setup"
                 pendingLabel="Preparing..."
               >
                 <input type="hidden" name="eventId" value={event.id} />
-                <button
-                  type="submit"
-                  className={buttonStyles({
-                    variant: "primary",
-                    size: "lg",
-                    className: "w-full",
-                  })}
+                  <button
+                    type="submit"
+                    className={buttonStyles({
+                      variant: "primary",
+                      size: "lg",
+                      className: "w-full",
+                    })}
+                  >
+                    Create scenes and proceed
+                  </button>
+                </ActionForm>
+
+                <ActionForm
+                  action={updateSceneDefaultsAction}
+                  submitLabel="Save screen type defaults"
+                  pendingLabel="Saving…"
                 >
-                  Create scenes and proceed
-                </button>
-              </ActionForm>
-            </form>
+                  <input type="hidden" name="eventId" value={event.id} />
+                  <button
+                    type="submit"
+                    className={buttonStyles({
+                      variant: "secondary",
+                      size: "lg",
+                      className: "w-full",
+                    })}
+                  >
+                    Save screen type defaults
+                  </button>
+                </ActionForm>
+              </form>
           </CardBody>
         </Card>
         

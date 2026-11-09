@@ -23,6 +23,7 @@ import type {
   QuizStatus,
   Role,
   SceneContent,
+  SceneDefaultsMap,
   SceneLogoOverride,
   SceneType,
   ScoreboardDisplayMode,
@@ -73,6 +74,7 @@ export const events = pgTable("events", {
     .default(DEFAULT_LOGO_VISIBILITY),
   status: text("status").notNull().default("draft"),
   isActive: boolean("is_active").notNull().default(false),
+  sceneDefaults: jsonb("scene_defaults").$type<SceneDefaultsMap>(),
   createdAt: timestamp("created_at", { withTimezone: true })
     .defaultNow()
     .notNull(),

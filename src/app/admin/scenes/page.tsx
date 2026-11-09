@@ -307,6 +307,7 @@ export default async function ScenesPage() {
                               eventId={event.id}
                               scene={scene}
                               speakers={speakers}
+                              sceneDefaults={event.sceneDefaults ?? undefined}
                             />
                           </ActionForm>
                         </div>
@@ -331,7 +332,11 @@ export default async function ScenesPage() {
                 submitLabel="Create scene"
                 pendingLabel="Creating…"
               >
-                <SceneFields eventId={event.id} speakers={speakers} />
+                <SceneFields
+                  eventId={event.id}
+                  speakers={speakers}
+                  sceneDefaults={event.sceneDefaults ?? undefined}
+                />
               </ActionForm>
             </CardBody>
           </Card>

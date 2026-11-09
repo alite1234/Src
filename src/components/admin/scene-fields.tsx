@@ -6,7 +6,13 @@ import { HelpCircle, Info } from "lucide-react";
 import { ImageUploadField } from "@/components/forms/image-upload-field";
 import { Field, Input, Select, Textarea } from "@/components/ui/field";
 import { ANIMATION_PRESETS, SCENE_TYPES } from "@/lib/constants";
-import type { PublicScene, SceneType } from "@/lib/types";
+import { logoModeLabel } from "@/lib/logo-visibility";
+import type {
+  PublicScene,
+  SceneDefaultsMap,
+  SceneType,
+  SceneTypeDefaults,
+} from "@/lib/types";
 import type { Speaker } from "@/lib/db/schema";
 
 type ContentField = "heading" | "subheading" | "body" | "footer";
@@ -155,20 +161,24 @@ export function SceneFields({
   eventId,
   scene,
   speakers,
+  sceneDefaults,
 }: {
   eventId: string;
   scene?: PublicScene;
   speakers: Speaker[];
+  sceneDefaults?: SceneDefaultsMap;
 }) {
+  const isNew = !scene;
   const [type, setType] = useState<SceneType>(scene?.type ?? "welcome");
   const config = SCENE_TYPE_CONFIG[type] ?? SCENE_TYPE_CONFIG.welcome;
+  const defaults = isNew ? (sceneDefaults?.[type] ?? {}) : {};
   const creatableTypes = useMemo(
     () => SCENE_TYPES.filter((item) => item.creatable),
     [],
   );
 
   return (
-    <div className="space-y-6">
+    <div key={isNew ? type : scene?.id ?? ""} className="space-y-6">
       <h4 className="font-display text-sm text-mist-400">Step 1: Choose scene type</h4>
       
       <div>
@@ -211,7 +221,11 @@ export function SceneFields({
               <Field label="Speaker name">
                 <Input
                   name="speakerName"
-                  defaultValue={scene?.imageOverrides?.speakerName ?? ""}
+                  defaultValue={
+                    scene?.imageOverrides?.speakerName ??
+                    defaults.speakerName ??
+                    ""
+                  }
                   placeholder="Name shown on screen"
                 />
               </Field>
@@ -220,7 +234,11 @@ export function SceneFields({
                 <Field label="Topic">
                   <Input
                     name="topic"
-                    defaultValue={scene?.imageOverrides?.topic ?? ""}
+                    defaultValue={
+                      scene?.imageOverrides?.topic ??
+                      defaults.topic ??
+                      ""
+                    }
                     placeholder="What is being debated?"
                   />
                 </Field>
@@ -228,7 +246,11 @@ export function SceneFields({
                 <Field label="Side/Stance">
                   <Select
                     name="stance"
-                    defaultValue={scene?.imageOverrides?.stance ?? ""}
+                    defaultValue={
+                      scene?.imageOverrides?.stance ??
+                      defaults.stance ??
+                      ""
+                    }
                   >
                     <option value="">Select side</option>
                     {STANCE_OPTIONS.map((option) => (
@@ -268,14 +290,18 @@ export function SceneFields({
                   {field === "body" ? (
                     <Textarea
                       name={field}
-                      defaultValue={scene?.content[field] ?? ""}
+                      defaultValue={
+                        scene?.content[field] ?? (defaults[field] ?? "")
+                      }
                       placeholder={FIELD_PLACEHOLDERS[field]}
                       className="min-h-28"
                     />
                   ) : (
                     <Input
                       name={field}
-                      defaultValue={scene?.content[field] ?? ""}
+                      defaultValue={
+                        scene?.content[field] ?? (defaults[field] ?? "")
+                      }
                       placeholder={FIELD_PLACEHOLDERS[field]}
                     />
                   )}
@@ -286,8 +312,40 @@ export function SceneFields({
         </>
       )}
 
-      <input type="hidden" name="title" defaultValue={scene?.title ?? ""} />
-      
+      <Field label="Scene title">
+        <Input
+          name="title"
+          required
+          defaultValue={
+            scene?.title ??
+            (defaults.title ?? "")
+          }
+          placeholder="What appears on screen"
+        />
+      </Field>
+
+      <Field label="Logo visibility">
+        <Select
+          name="logoMode"
+          defaultValue={
+            scene?.logoVisibility?.mode ??
+            (defaults.logoMode ?? "inherit")
+          }
+        >
+          <option value="inherit">Inherit event settings</option>
+          <option value="show">Always show logos</option>
+          <option value="hide">Always hide logos</option>
+        </Select>
+        <p className="mt-1 text-[10px] text-mist-500">
+          {logoModeLabel(
+            scene?.logoVisibility ??
+              (defaults.logoMode
+                ? { mode: defaults.logoMode }
+                : null),
+          )}
+        </p>
+      </Field>
+
       {config.note && (
         <div className="flex items-start gap-2 rounded-lg border border-white/8 bg-white/[0.03] px-3 py-2 text-xs leading-relaxed text-mist-400">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gold-500/70" />
